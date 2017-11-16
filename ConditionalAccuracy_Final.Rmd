@@ -1,0 +1,547 @@
+---
+title: "Primed Memory Retrieval: Conditional Accuracy"
+author: "Abhilasha Kumar"
+date: "November 16, 2017"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Reading and Formatting Data
+
+```{r }
+memory500 = read.csv("Compiled_Final500ms_CSV.csv", header = TRUE, sep = ",")
+memory32 = read.csv("Compiled_Final32ms_CSV.csv", header = TRUE, sep = ",")
+memory125 = read.csv("Compiled_Final125ms_CSV.csv", header = TRUE, sep = ",")
+memory48 = read.csv("Compiled_Final48ms_CSV.csv", header = TRUE, sep = ",")
+```
+
+# Means Per Prime Condition
+
+##32 ms
+
+```{r }
+library(dplyr)
+prime_acc_32 = group_by(memory32, PrimeCondition) %>%
+  summarise_at(vars(ImmediateAccuracy, DelayedAccuracy,RTImmediate, RTDelayed), mean)
+
+prime_subject_acc_32 = group_by(memory32, Subject, PrimeCondition) %>%
+  summarise_at(vars(ImmediateAccuracy, DelayedAccuracy,RTImmediate, RTDelayed), mean)
+```
+
+##48 ms
+
+```{r}
+library(dplyr)
+prime_acc_48 = group_by(memory48, PrimeCondition) %>%
+  summarise_at(vars(ImmediateAccuracy, DelayedAccuracy,RTImmediate, RTDelayed), mean)
+
+prime_subject_acc_48 = group_by(memory48, Subject, PrimeCondition) %>%
+  summarise_at(vars(ImmediateAccuracy, DelayedAccuracy,RTImmediate, RTDelayed), mean)
+```
+
+##500 ms
+```{r}
+library(dplyr)
+prime_acc_500 = group_by(memory500, PrimeCondition) %>%
+  summarise_at(vars(ImmediateAccuracy, DelayedAccuracy,RTImmediate, RTDelayed), mean)
+
+prime_subject_acc_500 = group_by(memory500, Subject, PrimeCondition) %>%
+  summarise_at(vars(ImmediateAccuracy, DelayedAccuracy,RTImmediate, RTDelayed), mean)
+```
+
+
+#ANOVAS
+
+## 32 ms
+
+### ANOVA for Immediate Recall
+
+```{r}
+prime_subject_acc_32$PrimeCondition = as.factor(prime_subject_acc_32$PrimeCondition)
+prime_subject_acc_32$Subject = as.factor(prime_subject_acc_32$Subject)
+
+immediate_aov_32 = aov(data = prime_subject_acc_32, 
+                        ImmediateAccuracy ~ PrimeCondition +
+                                 Error(Subject/PrimeCondition))
+summary(immediate_aov_32)
+
+options(contrasts = c('contr.sum', 'contr.poly'))
+library(lsmeans)
+library(multcomp)
+imm_lsm = lsmeans::lsmeans(immediate_aov_32, c("PrimeCondition"))
+prime_effect = cld(imm_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE)
+library(knitr)
+kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
+```
+
+### ANOVA for Delayed Recall
+```{r}
+delayed_aov_32 = aov(data = prime_subject_acc_32, 
+                      DelayedAccuracy ~ PrimeCondition +
+                                 Error(Subject/PrimeCondition))
+summary(delayed_aov_32)
+```
+
+##48 ms
+
+###ANOVA for Immediate Recall
+```{r}
+prime_subject_acc_48$PrimeCondition = as.factor(prime_subject_acc_48$PrimeCondition)
+prime_subject_acc_48$Subject = as.factor(prime_subject_acc_48$Subject)
+
+immediate_aov_48 = aov(data = prime_subject_acc_48, 
+                        ImmediateAccuracy ~ PrimeCondition +
+                                 Error(Subject/PrimeCondition))
+summary(immediate_aov_48)
+
+options(contrasts = c('contr.sum', 'contr.poly'))
+library(lsmeans)
+library(multcomp)
+imm_lsm = lsmeans::lsmeans(immediate_aov_48, c("PrimeCondition"))
+prime_effect = cld(imm_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE)
+library(knitr)
+kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
+```
+
+
+###ANOVA for Delayed Recall
+```{r}
+delayed_aov_48 = aov(data = prime_subject_acc_48, 
+                      DelayedAccuracy ~ PrimeCondition +
+                                 Error(Subject/PrimeCondition))
+summary(delayed_aov_48)
+```
+
+##500 ms
+
+###ANOVA for Immediate Recall
+```{r}
+prime_subject_acc_500$PrimeCondition = as.factor(prime_subject_acc_500$PrimeCondition)
+prime_subject_acc_500$Subject = as.factor(prime_subject_acc_500$Subject)
+immediate_aov_500 = aov(data = prime_subject_acc_500, 
+                        ImmediateAccuracy ~ PrimeCondition +
+                                 Error(Subject/PrimeCondition))
+summary(immediate_aov_500)
+
+options(contrasts = c('contr.sum', 'contr.poly'))
+library(lsmeans)
+library(multcomp)
+imm_lsm = lsmeans::lsmeans(immediate_aov_500, c("PrimeCondition"))
+prime_effect = cld(imm_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE)
+library(knitr)
+kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
+```
+
+###ANOVA for Delayed Recall
+```{r}
+delayed_aov_500 = aov(data = prime_subject_acc_500, 
+                      DelayedAccuracy ~ PrimeCondition +
+                                 Error(Subject/PrimeCondition))
+summary(delayed_aov_500)
+```
+
+#Conditional Accuracy
+
+##32 ms
+
+##Organizing Data
+
+```{r}
+library(dplyr)
+## overall delayed acc means split by imm acc (0/1)
+cond_32 = group_by(memory32, ImmediateAccuracy, PrimeCondition) %>%
+  summarise_at(vars(DelayedAccuracy), mean)
+##per subject
+cond_sub_32 = group_by(memory32, Subject, ImmediateAccuracy, PrimeCondition) %>%
+  summarise_at(vars(DelayedAccuracy), mean)
+##taking only correct immediate responses from this:
+cond_sub_correct_32 = subset(cond_sub_32, cond_sub_32$ImmediateAccuracy == "1")
+
+## Merging immediate and delayed into one file:
+
+## now we have conditional delayed accuracies in cond_sub_correct_32
+## and we have immediate accuracies in prime_subject_acc_32
+## now we must combine the two files. 
+
+colnames(cond_sub_correct_32) = c("Subject", "IA", "PrimeCondition", "Delayed")
+colnames(prime_subject_acc_32) = c("Subject", "PrimeCondition", "Immediate", "DA",
+                                   "RTImm", "RTdel")
+
+final_combined_32 = merge(cond_sub_correct_32, prime_subject_acc_32, 
+                       by = c("Subject", "PrimeCondition"))
+
+# now we have immediate and delayed accuracy in wide format, i.e. side to side.
+# We need to convert to long format
+
+#first we remove uneccesary columns, i.e. IA and DA
+
+final_combined_32 = final_combined_32[, -c(3,6,7,8)]
+
+# converting to long
+
+library(tidyr)
+final_long_32 <- final_combined_32 %>%
+  gather(Delay, Accuracy, Immediate, Delayed)
+  
+
+final_long_32 <- final_long_32[order(final_long_32$Subject),]
+final_long_32$Delay = as.factor(as.character(final_long_32$Delay))
+final_long_32$Subject = as.factor(as.character(final_long_32$Subject))
+final_long_32$Accuracy = as.numeric(as.character(final_long_32$Accuracy))
+```
+
+###Conditional ANOVA
+
+```{r}
+final_aov_32 = aov(data = final_long_32, Accuracy ~ Delay*PrimeCondition + 
+                  Error(Subject/(Delay*PrimeCondition)))
+summary(final_aov_32)
+
+library(multcomp)
+library(knitr)
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+conditional_lsm = lsmeans::lsmeans(final_aov_32, c("Delay", "PrimeCondition"))
+prime_effect = cld(conditional_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE, by = "Delay")
+kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
+```
+
+##48 ms
+
+###Organizing Data
+
+```{r}
+library(dplyr)
+## overall delayed acc means split by imm acc (0/1)
+cond_48 = group_by(memory48, ImmediateAccuracy, PrimeCondition) %>%
+  summarise_at(vars(DelayedAccuracy), mean)
+##per subject
+cond_sub_48 = group_by(memory48, Subject, ImmediateAccuracy, PrimeCondition) %>%
+  summarise_at(vars(DelayedAccuracy), mean)
+##taking only correct immediate responses from this:
+cond_sub_correct_48 = subset(cond_sub_48, cond_sub_48$ImmediateAccuracy == "1")
+
+#for 48 ms, S12 has 2 rows missing
+
+cond_sub_correct_48[89,] = c("12",1,"Semantic", 0 )
+cond_sub_correct_48[90,] = c("12",1,"UnSemantic", 0 )
+
+##  Merging immediate and delayed into one file:
+
+## now we have conditional delayed accuracies in cond_sub_correct_48
+## and we have immediate accuracies in prime_subject_acc_48
+## now we must combine the two files. 
+
+colnames(cond_sub_correct_48) = c("Subject", "IA", "PrimeCondition", "Delayed")
+colnames(prime_subject_acc_48) = c("Subject", "PrimeCondition", "Immediate", "DA",
+                                   "RTImm", "RTDel")
+
+final_combined_48 = merge(cond_sub_correct_48, prime_subject_acc_48, 
+                       by = c("Subject", "PrimeCondition"))
+
+# now we have immediate and delayed accuracy in wide format, i.e. side to side.
+# We need to convert to long format
+
+#first we remove uneccesary columns, i.e. IA and DA
+
+final_combined_48 = final_combined_48[, -c(3,6,7,8)]
+
+# converting to long
+
+library(tidyr)
+final_long_48 <- final_combined_48 %>%
+  gather(Delay, Accuracy, Immediate, Delayed)
+  
+
+final_long_48 <- final_long_48[order(final_long_48$Subject),]
+final_long_48$Delay = as.factor(as.character(final_long_48$Delay))
+final_long_48$Subject = as.factor(as.character(final_long_48$Subject))
+final_long_48$Accuracy = as.numeric(as.character(final_long_48$Accuracy))
+```
+
+###Conditional ANOVA
+```{r}
+final_aov_48 = aov(data = final_long_48, Accuracy ~ Delay*PrimeCondition + 
+                  Error(Subject/(Delay*PrimeCondition)))
+summary(final_aov_48)
+
+library(multcomp)
+library(knitr)
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+conditional_lsm = lsmeans::lsmeans(final_aov_48, c("Delay", "PrimeCondition"))
+prime_effect = cld(conditional_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE, by = "PrimeCondition")
+kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
+```
+
+##500 ms
+
+###Organizing Data
+```{r}
+library(dplyr)
+## overall delayed acc means split by imm acc (0/1)
+cond_500 = group_by(memory500, ImmediateAccuracy, PrimeCondition) %>%
+  summarise_at(vars(DelayedAccuracy), mean)
+##per subject
+cond_sub_500 = group_by(memory500, Subject, ImmediateAccuracy, PrimeCondition) %>%
+  summarise_at(vars(DelayedAccuracy), mean)
+##taking only correct immediate responses from this:
+cond_sub_correct_500 = subset(cond_sub_500, cond_sub_500$ImmediateAccuracy == "1")
+
+#for 500 ms, S36 and S42 have one row each missing
+
+cond_sub_correct_500[99,] = c("36",1,"Neutral", 0 )
+cond_sub_correct_500[100,] = c("42",1,"Phonological", 0 )
+
+##  Merging immediate and delayed into one file:
+
+## now we have conditional delayed accuracies in cond_sub_correct_500
+## and we have immediate accuracies in prime_subject_acc_500
+## now we must combine the two files. 
+
+colnames(cond_sub_correct_500) = c("Subject", "IA", "PrimeCondition", "Delayed")
+colnames(prime_subject_acc_500) = c("Subject", "PrimeCondition", "Immediate", 
+                                    "DA", "RTImm", "RTDel")
+
+final_combined_500 = merge(cond_sub_correct_500, prime_subject_acc_500, 
+                       by = c("Subject", "PrimeCondition"))
+
+# now we have immediate and delayed accuracy in wide format, i.e. side to side.
+# We need to convert to long format
+
+#first we remove uneccesary columns, i.e. IA and DA
+
+final_combined_500 = final_combined_500[, -c(3,6,7,8)]
+
+# converting to long
+
+library(tidyr)
+final_long_500 <- final_combined_500 %>%
+  gather(Delay, Accuracy, Immediate, Delayed)
+  
+
+final_long_500 <- final_long_500[order(final_long_500$Subject),]
+final_long_500$Delay = as.factor(as.character(final_long_500$Delay))
+final_long_500$Subject = as.factor(as.character(final_long_500$Subject))
+final_long_500$Accuracy = as.numeric(as.character(final_long_500$Accuracy))
+```
+
+###Conditional ANOVA
+```{r}
+final_aov_500 = aov(data = final_long_500, Accuracy ~ Delay*PrimeCondition + 
+                  Error(Subject/(Delay*PrimeCondition)))
+summary(final_aov_500)
+
+library(multcomp)
+library(knitr)
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+conditional_lsm = lsmeans::lsmeans(final_aov_500, c("Delay", "PrimeCondition"))
+prime_effect = cld(conditional_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE, by = "PrimeCondition")
+kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
+```
+
+
+#Figures
+
+##32 ms
+###Immediate Recall
+
+```{r, fig}
+
+library(Rmisc)
+immediateagg_rmisc_32 = summarySE(prime_subject_acc_32, 
+                      measurevar = "Immediate",
+                      groupvars = c("PrimeCondition"))
+
+## IMMEDIATE
+library(ggplot2)
+library(ggthemes)
+immediateagg_rmisc_32 %>% mutate(PrimeCondition = factor(PrimeCondition, 
+                                                 levels = unique(PrimeCondition),
+                    labels = c("Identical", "Neutral", 
+                               "Phonological", "Semantic", "Unrelated")))%>%
+ggplot(aes(x = PrimeCondition, y = Immediate))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
+  geom_errorbar(aes(ymin = Immediate - ci, ymax = Immediate + ci),
+                width=.05, position=position_dodge(.5)) +
+  theme_few()+
+  xlab("Prime Condition") + ylab("Mean Accuracy") + 
+  ggtitle("Immediate: Mean Accuracy by Prime Condition")
+```
+
+### Delayed Recall
+```{r}
+library(Rmisc)
+delayedagg_rmisc_32 = summarySE(prime_subject_acc_32,
+                      measurevar = "DA",
+                      groupvars = c("PrimeCondition"))
+#DELAYED
+delayedagg_rmisc_32 %>% mutate(PrimeCondition = factor(PrimeCondition,
+                                                 levels = unique(PrimeCondition),
+                    labels = c("Identical", "Neutral",
+                               "Phonological", "Semantic", "Unrelated")))%>%
+ggplot(aes(x = PrimeCondition, y = DA))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
+  geom_errorbar(aes(ymin = DA - ci, ymax = DA + ci),
+                width=.05, position=position_dodge(.5)) +
+  theme_few()+
+  xlab("Prime Condition") + ylab("Mean Accuracy") +
+  ggtitle("Delayed: Mean Accuracy by Prime Condition")
+```
+### Conditional Recall
+```{r}
+## PLOTTING INTERACTION
+agg_final_combined_32 = group_by(final_long_32, Delay, PrimeCondition)%>%
+  summarise_at(vars(Accuracy), mean)
+library(Rmisc)
+agg_rmisc_32 = summarySE(final_long_32,
+                      measurevar = "Accuracy",
+                      groupvars = c("Delay", "PrimeCondition"))
+
+agg_rmisc_32 %>% mutate(PrimeCondition = factor(PrimeCondition,
+                                                 levels = unique(PrimeCondition),
+                    labels = c("Identical", "Neutral",
+                               "Phonological", "Semantic", "Unrelated")))%>%
+  ggplot(aes(x = PrimeCondition, y = Accuracy, fill = Delay))+
+  geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+  geom_errorbar(aes(ymin = Accuracy - ci, ymax = Accuracy + ci),
+                width=.05, position=position_dodge(.5)) +
+  theme_few()+
+  scale_fill_solarized()+
+  xlab("Prime Condition") + ylab("Mean Accuracy") +
+  ggtitle("Mean Accuracy by Prime Condition and Delay")
+```
+
+## 48ms
+### Immediate Recall
+```{r}
+library(Rmisc)
+immediateagg_rmisc_48 = summarySE(prime_subject_acc_48,
+                      measurevar = "Immediate",
+                      groupvars = c("PrimeCondition"))
+
+## IMMEDIATE
+library(ggplot2)
+library(ggthemes)
+ggplot(immediateagg_rmisc_48, aes(x = PrimeCondition, y = Immediate))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
+  geom_errorbar(aes(ymin = Immediate - ci, ymax = Immediate + ci),
+                width=.05, position=position_dodge(.5)) +
+  theme_few()+
+  xlab("Prime Condition") + ylab("Mean Accuracy") +
+  ggtitle("Immediate: Mean Accuracy by Prime Condition")
+
+```
+
+### Delayed Recall
+```{r}
+library(Rmisc)
+delayedagg_rmisc_48 = summarySE(prime_subject_acc_48,
+                      measurevar = "DA",
+                      groupvars = c("PrimeCondition"))
+#DELAYED
+ggplot(delayedagg_rmisc_48, aes(x = PrimeCondition, y = DA))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
+  geom_errorbar(aes(ymin = DA - ci, ymax = DA + ci),
+                width=.05, position=position_dodge(.5)) +
+  theme_few()+
+  xlab("Prime Condition") + ylab("Mean Accuracy") +
+  ggtitle("Delayed: Mean Accuracy by Prime Condition")
+```
+
+### Conditional Recall
+```{r}
+## PLOTTING INTERACTION
+agg_final_combined_48 = group_by(final_long_48, Delay, PrimeCondition)%>%
+  summarise_at(vars(Accuracy), mean)
+library(Rmisc)
+agg_rmisc_48 = summarySE(final_long_48,
+                      measurevar = "Accuracy",
+                      groupvars = c("Delay", "PrimeCondition"))
+
+agg_rmisc_48 %>% mutate(PrimeCondition = factor(PrimeCondition,
+                                                 levels = unique(PrimeCondition),
+                    labels = c("Identical", "Neutral",
+                               "Phonological", "Semantic", "Unrelated")))%>%
+  ggplot(aes(x = PrimeCondition, y = Accuracy, fill = Delay))+
+  geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+  geom_errorbar(aes(ymin = Accuracy - ci, ymax = Accuracy + ci),
+                width=.05, position=position_dodge(.5)) +
+  theme_few()+
+  scale_fill_solarized()+
+  xlab("Prime Condition") + ylab("Mean Accuracy") +
+  ggtitle("Mean Accuracy by Prime Condition and Delay")
+```
+
+## 500 ms
+
+### Immediate Recall
+```{r}
+library(Rmisc)
+immediateagg_rmisc_500 = summarySE(prime_subject_acc_500, 
+                      measurevar = "Immediate",
+                      groupvars = c("PrimeCondition"))
+
+## IMMEDIATE
+library(ggplot2)
+library(ggthemes)
+ggplot(immediateagg_rmisc_500, aes(x = PrimeCondition, y = Immediate))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
+  geom_errorbar(aes(ymin = Immediate - ci, ymax = Immediate + ci),
+                width=.05, position=position_dodge(.5)) +
+  theme_few()+
+  xlab("Prime Condition") + ylab("Mean Accuracy") + 
+  ggtitle("Immediate: Mean Accuracy by Prime Condition")
+
+```
+
+### Delayed Recall 
+```{r}
+library(Rmisc)
+delayedagg_rmisc_500 = summarySE(prime_subject_acc_500, 
+                      measurevar = "DA",
+                      groupvars = c("PrimeCondition"))
+#DELAYED
+ggplot(delayedagg_rmisc_500, aes(x = PrimeCondition, y = DA))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
+  geom_errorbar(aes(ymin = DA - ci, ymax = DA + ci),
+                width=.05, position=position_dodge(.5)) +
+  theme_few()+
+  xlab("Prime Condition") + ylab("Mean Accuracy") + 
+  ggtitle("Delayed: Mean Accuracy by Prime Condition")
+
+```
+### Conditional Recall
+```{r}
+## PLOTTING INTERACTION
+agg_final_combined_500 = group_by(final_long_500, Delay, PrimeCondition)%>%
+  summarise_at(vars(Accuracy), mean)
+library(Rmisc)
+agg_rmisc_500 = summarySE(final_long_500, 
+                      measurevar = "Accuracy",
+                      groupvars = c("Delay", "PrimeCondition"))
+
+agg_rmisc_500 %>% mutate(PrimeCondition = factor(PrimeCondition, 
+                                                 levels = unique(PrimeCondition),
+                    labels = c("Identical", "Neutral", 
+                               "Phonological", "Semantic", "Unrelated")))%>%
+  ggplot(aes(x = PrimeCondition, y = Accuracy, fill = Delay))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+  geom_errorbar(aes(ymin = Accuracy - ci, ymax = Accuracy + ci),
+                width=.05, position=position_dodge(.5)) +
+  theme_few()+
+  scale_fill_solarized()+
+  xlab("Prime Condition") + ylab("Mean Accuracy") + 
+  ggtitle("Mean Accuracy by Prime Condition and Delay")
+
+```
