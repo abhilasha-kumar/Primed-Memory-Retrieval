@@ -28,7 +28,6 @@ memory500 = read.csv("Compiled_Final500ms_CSV.csv", header = TRUE, sep = ",")
 memory32 = read.csv("Compiled_Final32ms_CSV.csv", header = TRUE, sep = ",")
 memory125 = read.csv("Compiled_Final125ms_CSV.csv", header = TRUE, sep = ",")
 memory48 = read.csv("Compiled_Final48ms_CSV.csv", header = TRUE, sep = ",")
-
 @
 
 \section {Means per Prime Condition}
@@ -54,17 +53,17 @@ prime_acc_48 = group_by(memory48, PrimeCondition) %>%
 prime_subject_acc_48 = group_by(memory48, Subject, PrimeCondition) %>%
   summarise_at(vars(ImmediateAccuracy, DelayedAccuracy,RTImmediate, RTDelayed), mean)
 @
-
-\subsection*{125 ms}
-<<>>=
-#memory = subset(memory, memory$Subject != '8' & memory$Subject != '21')
-library(dplyr)
-prime_acc_125 = group_by(memory125, PrimeCondition) %>%
-  summarise_at(vars(ImmediateAccuracy, DelayedAccuracy,RTImmediate, RTDelayed), mean)
-
-prime_subject_acc_125 = group_by(memory125, Subject, PrimeCondition) %>%
-  summarise_at(vars(ImmediateAccuracy, DelayedAccuracy,RTImmediate, RTDelayed), mean)
-@
+% 
+% \subsection*{125 ms}
+% <<>>=
+% #memory = subset(memory, memory$Subject != '8' & memory$Subject != '21')
+% library(dplyr)
+% prime_acc_125 = group_by(memory125, PrimeCondition) %>%
+%   summarise_at(vars(ImmediateAccuracy, DelayedAccuracy,RTImmediate, RTDelayed), mean)
+% 
+% prime_subject_acc_125 = group_by(memory125, Subject, PrimeCondition) %>%
+%   summarise_at(vars(ImmediateAccuracy, DelayedAccuracy,RTImmediate, RTDelayed), mean)
+% @
 
 \subsection*{500 ms}
 
@@ -140,35 +139,35 @@ delayed_aov_48 = aov(data = prime_subject_acc_48,
 summary(delayed_aov_48)
 @
 
-\subsection *{125 ms}
-
-\subsubsection*{ANOVA for Immediate Recall}
-<<>>=
-prime_subject_acc_125$PrimeCondition = as.factor(prime_subject_acc_125$PrimeCondition)
-prime_subject_acc_125$Subject = as.factor(prime_subject_acc_125$Subject)
-
-immediate_aov_125 = aov(data = prime_subject_acc_125, 
-                        ImmediateAccuracy ~ PrimeCondition +
-                                 Error(Subject/PrimeCondition))
-summary(immediate_aov_125)
-
-options(contrasts = c('contr.sum', 'contr.poly'))
-library(lsmeans)
-library(multcomp)
-imm_lsm = lsmeans::lsmeans(immediate_aov_125, c("PrimeCondition"))
-prime_effect = cld(imm_lsm, alpha = 0.05, 
-                adjust = "tukey", details = TRUE)
-library(knitr)
-kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
-@
-
-\subsubsection*{ANOVA for Delayed Recall}
-<<>>=
-delayed_aov_125 = aov(data = prime_subject_acc_125, 
-                      DelayedAccuracy ~ PrimeCondition +
-                                 Error(Subject/PrimeCondition))
-summary(delayed_aov_125)
-@
+% \subsection *{125 ms}
+% 
+% \subsubsection*{ANOVA for Immediate Recall}
+% <<>>=
+% prime_subject_acc_125$PrimeCondition = as.factor(prime_subject_acc_125$PrimeCondition)
+% prime_subject_acc_125$Subject = as.factor(prime_subject_acc_125$Subject)
+% 
+% immediate_aov_125 = aov(data = prime_subject_acc_125, 
+%                         ImmediateAccuracy ~ PrimeCondition +
+%                                  Error(Subject/PrimeCondition))
+% summary(immediate_aov_125)
+% 
+% options(contrasts = c('contr.sum', 'contr.poly'))
+% library(lsmeans)
+% library(multcomp)
+% imm_lsm = lsmeans::lsmeans(immediate_aov_125, c("PrimeCondition"))
+% prime_effect = cld(imm_lsm, alpha = 0.05, 
+%                 adjust = "tukey", details = TRUE)
+% library(knitr)
+% kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
+% @
+% 
+% \subsubsection*{ANOVA for Delayed Recall}
+% <<>>=
+% delayed_aov_125 = aov(data = prime_subject_acc_125, 
+%                       DelayedAccuracy ~ PrimeCondition +
+%                                  Error(Subject/PrimeCondition))
+% summary(delayed_aov_125)
+% @
 
 \subsection *{500 ms}
 
@@ -334,69 +333,69 @@ prime_effect = cld(conditional_lsm, alpha = 0.05,
 kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
 @
 
-\subsection*{125 ms}
-
-\subsubsection*{Organizing Data}
-
-<<>>=
-library(dplyr)
-
-## CHECK REMOVE SUBJECT 8 and 21??
-## overall delayed acc means split by imm acc (0/1)
-cond_125 = group_by(memory125, ImmediateAccuracy, PrimeCondition) %>%
-  summarise_at(vars(DelayedAccuracy), mean)
-##per subject
-cond_sub_125 = group_by(memory500, Subject, ImmediateAccuracy, PrimeCondition) %>%
-  summarise_at(vars(DelayedAccuracy), mean)
-##taking only correct immediate responses from this:
-cond_sub_correct_125 = subset(cond_sub_125, cond_sub_125$ImmediateAccuracy == "1")
-
-##  Merging immediate and delayed into one file:
-
-## now we have conditional delayed accuracies in cond_sub_correct_125
-## and we have immediate accuracies in prime_subject_acc_125
-## now we must combine the two files. 
-
-colnames(cond_sub_correct_125) = c("Subject", "IA", "PrimeCondition", "Delayed")
-colnames(prime_subject_acc_125) = c("Subject", "PrimeCondition", "Immediate", "DA")
-
-final_combined_125 = merge(cond_sub_correct_125, prime_subject_acc_125, 
-                       by = c("Subject", "PrimeCondition"))
-
-# now we have immediate and delayed accuracy in wide format, i.e. side to side.
-# We need to convert to long format
-
-#first we remove uneccesary columns, i.e. IA and DA
-
-final_combined_125 = final_combined_125[, -c(4,5)]
-
-# converting to long
-
-library(tidyr)
-final_long_125 <- final_combined_125 %>%
-  gather(Delay, Accuracy, Immediate, Delayed)
-  
-
-final_long_125 <- final_long_125[order(final_long_125$Subject),]
-final_long_125$Delay = as.factor(as.character(final_long_125$Delay))
-final_long_125$Accuracy = as.numeric(as.character(final_long_125$Accuracy))
-@
-
-\subsubsection*{Conditional ANOVA}
-<<>>=
-final_aov_125 = aov(data = final_long_125, Accuracy ~ Delay*PrimeCondition + 
-                  Error(Subject/(Delay*PrimeCondition)))
-summary(final_aov_125)
-
-library(multcomp)
-library(knitr)
-options(contrasts = c('contr.sum', 'contr.poly'))
-
-conditional_lsm = lsmeans::lsmeans(final_aov_125, c("Delay", "PrimeCondition"))
-prime_effect = cld(conditional_lsm, alpha = 0.05, 
-                adjust = "tukey", details = TRUE, by = "PrimeCondition")
-kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
-@
+% \subsection*{125 ms}
+% 
+% \subsubsection*{Organizing Data}
+% 
+% <<>>=
+% library(dplyr)
+% 
+% ## CHECK REMOVE SUBJECT 8 and 21??
+% ## overall delayed acc means split by imm acc (0/1)
+% cond_125 = group_by(memory125, ImmediateAccuracy, PrimeCondition) %>%
+%   summarise_at(vars(DelayedAccuracy), mean)
+% ##per subject
+% cond_sub_125 = group_by(memory500, Subject, ImmediateAccuracy, PrimeCondition) %>%
+%   summarise_at(vars(DelayedAccuracy), mean)
+% ##taking only correct immediate responses from this:
+% cond_sub_correct_125 = subset(cond_sub_125, cond_sub_125$ImmediateAccuracy == "1")
+% 
+% ##  Merging immediate and delayed into one file:
+% 
+% ## now we have conditional delayed accuracies in cond_sub_correct_125
+% ## and we have immediate accuracies in prime_subject_acc_125
+% ## now we must combine the two files. 
+% 
+% colnames(cond_sub_correct_125) = c("Subject", "IA", "PrimeCondition", "Delayed")
+% colnames(prime_subject_acc_125) = c("Subject", "PrimeCondition", "Immediate", "DA")
+% 
+% final_combined_125 = merge(cond_sub_correct_125, prime_subject_acc_125, 
+%                        by = c("Subject", "PrimeCondition"))
+% 
+% # now we have immediate and delayed accuracy in wide format, i.e. side to side.
+% # We need to convert to long format
+% 
+% #first we remove uneccesary columns, i.e. IA and DA
+% 
+% final_combined_125 = final_combined_125[, -c(4,5)]
+% 
+% # converting to long
+% 
+% library(tidyr)
+% final_long_125 <- final_combined_125 %>%
+%   gather(Delay, Accuracy, Immediate, Delayed)
+%   
+% 
+% final_long_125 <- final_long_125[order(final_long_125$Subject),]
+% final_long_125$Delay = as.factor(as.character(final_long_125$Delay))
+% final_long_125$Accuracy = as.numeric(as.character(final_long_125$Accuracy))
+% @
+% 
+% \subsubsection*{Conditional ANOVA}
+% <<>>=
+% final_aov_125 = aov(data = final_long_125, Accuracy ~ Delay*PrimeCondition + 
+%                   Error(Subject/(Delay*PrimeCondition)))
+% summary(final_aov_125)
+% 
+% library(multcomp)
+% library(knitr)
+% options(contrasts = c('contr.sum', 'contr.poly'))
+% 
+% conditional_lsm = lsmeans::lsmeans(final_aov_125, c("Delay", "PrimeCondition"))
+% prime_effect = cld(conditional_lsm, alpha = 0.05, 
+%                 adjust = "tukey", details = TRUE, by = "PrimeCondition")
+% kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
+% @
 
 
 \subsection*{500 ms}
@@ -472,7 +471,7 @@ kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
 
 \subsection*{32 ms}
 \subsubsection*{Immediate Recall}
-<<>>=
+<<fig=TRUE>>=
 library(Rmisc)
 immediateagg_rmisc_32 = summarySE(prime_subject_acc_32, 
                       measurevar = "Immediate",
@@ -495,7 +494,7 @@ ggplot(aes(x = PrimeCondition, y = Immediate))+
 @
 
 \subsubsection*{Delayed Recall}
-<<>>=
+<<fig=TRUE>>=
 library(Rmisc)
 delayedagg_rmisc_32 = summarySE(prime_subject_acc_32, 
                       measurevar = "DA",
@@ -515,7 +514,7 @@ ggplot(aes(x = PrimeCondition, y = DA))+
 @
 
 \subsubsection*{Conditional Recall}
-<<>>=
+<<fig=TRUE>>=
 ## PLOTTING INTERACTION
 agg_final_combined_32 = group_by(final_long_32, Delay, PrimeCondition)%>%
   summarise_at(vars(Accuracy), mean)
@@ -542,7 +541,7 @@ agg_rmisc_32 %>% mutate(PrimeCondition = factor(PrimeCondition,
 
 \subsection*{48 ms}
 \subsubsection*{Immediate Recall}
-<<>>=
+<<fig=TRUE>>=
 library(Rmisc)
 immediateagg_rmisc_48 = summarySE(prime_subject_acc_48, 
                       measurevar = "Immediate",
@@ -561,7 +560,7 @@ ggplot(immediateagg_rmisc_48, aes(x = PrimeCondition, y = Immediate))+
 @
 
 \subsubsection*{Delayed Recall}
-<<>>=
+<<fig=TRUE>>=
 library(Rmisc)
 delayedagg_rmisc_48 = summarySE(prime_subject_acc_48, 
                       measurevar = "DA",
@@ -577,7 +576,7 @@ ggplot(delayedagg_rmisc_48, aes(x = PrimeCondition, y = DA))+
 @
 
 \subsubsection*{Conditional Recall}
-<<>>=
+<<fig=TRUE>>=
 ## PLOTTING INTERACTION
 agg_final_combined_48 = group_by(final_long_48, Delay, PrimeCondition)%>%
   summarise_at(vars(Accuracy), mean)
@@ -602,72 +601,72 @@ agg_rmisc_48 %>% mutate(PrimeCondition = factor(PrimeCondition,
 @
 
 
-\subsection*{125 ms}
-
-\subsubsection*{Immediate Recall}
-<<>>=
-library(Rmisc)
-immediateagg_rmisc_125 = summarySE(prime_subject_acc_125, 
-                      measurevar = "Immediate",
-                      groupvars = c("PrimeCondition"))
-
-## IMMEDIATE
-library(ggplot2)
-library(ggthemes)
-ggplot(immediateagg_rmisc_125, aes(x = PrimeCondition, y = Immediate))+
- geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
-  geom_errorbar(aes(ymin = Immediate - ci, ymax = Immediate + ci),
-                width=.05, position=position_dodge(.5)) +
-  theme_few()+
-  xlab("Prime Condition") + ylab("Mean Accuracy") + 
-  ggtitle("Immediate: Mean Accuracy by Prime Condition")
-@
-
-\subsubsection*{Delayed Recall}
-<<>>=
-library(Rmisc)
-delayedagg_rmisc_125 = summarySE(prime_subject_acc_125, 
-                      measurevar = "DA",
-                      groupvars = c("PrimeCondition"))
-#DELAYED
-ggplot(delayedagg_rmisc_125, aes(x = PrimeCondition, y = DA))+
- geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
-  geom_errorbar(aes(ymin = DA - ci, ymax = DA + ci),
-                width=.05, position=position_dodge(.5)) +
-  theme_few()+
-  xlab("Prime Condition") + ylab("Mean Accuracy") + 
-  ggtitle("Delayed: Mean Accuracy by Prime Condition")
-@
-
-\subsubsection*{Conditional Recall}
-<<>>=
-## PLOTTING INTERACTION
-agg_final_combined_125 = group_by(final_long_125, Delay, PrimeCondition)%>%
-  summarise_at(vars(Accuracy), mean)
-library(Rmisc)
-agg_rmisc_125 = summarySE(final_long_125, 
-                      measurevar = "Accuracy",
-                      groupvars = c("Delay", "PrimeCondition"))
-
-agg_rmisc_125 %>% mutate(PrimeCondition = factor(PrimeCondition, 
-                                                 levels = unique(PrimeCondition),
-                    labels = c("Identical", "Neutral", 
-                               "Phonological", "Semantic", "Unrelated")))%>%
-  ggplot(aes(x = PrimeCondition, y = Accuracy, fill = Delay))+ geom_bar(stat = "identity", position = "dodge", width = 0.5)+
-  geom_errorbar(aes(ymin = Accuracy - ci, ymax = Accuracy + ci),
-                width=.05, position=position_dodge(.5)) +
-  theme_few()+
-  scale_fill_solarized()+
-  xlab("Prime Condition") + ylab("Mean Accuracy") + 
-  ggtitle("Mean Accuracy by Prime Condition and Delay")
-
-@
+% \subsection*{125 ms}
+% 
+% \subsubsection*{Immediate Recall}
+% <<>>=
+% library(Rmisc)
+% immediateagg_rmisc_125 = summarySE(prime_subject_acc_125, 
+%                       measurevar = "Immediate",
+%                       groupvars = c("PrimeCondition"))
+% 
+% ## IMMEDIATE
+% library(ggplot2)
+% library(ggthemes)
+% ggplot(immediateagg_rmisc_125, aes(x = PrimeCondition, y = Immediate))+
+%  geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
+%   geom_errorbar(aes(ymin = Immediate - ci, ymax = Immediate + ci),
+%                 width=.05, position=position_dodge(.5)) +
+%   theme_few()+
+%   xlab("Prime Condition") + ylab("Mean Accuracy") + 
+%   ggtitle("Immediate: Mean Accuracy by Prime Condition")
+% @
+% 
+% \subsubsection*{Delayed Recall}
+% <<>>=
+% library(Rmisc)
+% delayedagg_rmisc_125 = summarySE(prime_subject_acc_125, 
+%                       measurevar = "DA",
+%                       groupvars = c("PrimeCondition"))
+% #DELAYED
+% ggplot(delayedagg_rmisc_125, aes(x = PrimeCondition, y = DA))+
+%  geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
+%   geom_errorbar(aes(ymin = DA - ci, ymax = DA + ci),
+%                 width=.05, position=position_dodge(.5)) +
+%   theme_few()+
+%   xlab("Prime Condition") + ylab("Mean Accuracy") + 
+%   ggtitle("Delayed: Mean Accuracy by Prime Condition")
+% @
+% 
+% \subsubsection*{Conditional Recall}
+% <<>>=
+% ## PLOTTING INTERACTION
+% agg_final_combined_125 = group_by(final_long_125, Delay, PrimeCondition)%>%
+%   summarise_at(vars(Accuracy), mean)
+% library(Rmisc)
+% agg_rmisc_125 = summarySE(final_long_125, 
+%                       measurevar = "Accuracy",
+%                       groupvars = c("Delay", "PrimeCondition"))
+% 
+% agg_rmisc_125 %>% mutate(PrimeCondition = factor(PrimeCondition, 
+%                                                  levels = unique(PrimeCondition),
+%                     labels = c("Identical", "Neutral", 
+%                                "Phonological", "Semantic", "Unrelated")))%>%
+%   ggplot(aes(x = PrimeCondition, y = Accuracy, fill = Delay))+ geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+%   geom_errorbar(aes(ymin = Accuracy - ci, ymax = Accuracy + ci),
+%                 width=.05, position=position_dodge(.5)) +
+%   theme_few()+
+%   scale_fill_solarized()+
+%   xlab("Prime Condition") + ylab("Mean Accuracy") + 
+%   ggtitle("Mean Accuracy by Prime Condition and Delay")
+% 
+% @
 
 
 \subsection*{500 ms}
 
 \subsubsection*{Immediate Recall}
-<<>>=
+<<fig=TRUE>>=
 library(Rmisc)
 immediateagg_rmisc_500 = summarySE(prime_subject_acc_500, 
                       measurevar = "Immediate",
@@ -686,7 +685,7 @@ ggplot(immediateagg_rmisc_500, aes(x = PrimeCondition, y = Immediate))+
 @
 
 \subsubsection*{Delayed Recall}
-<<>>=
+<<fig=TRUE>>=
 library(Rmisc)
 delayedagg_rmisc_500 = summarySE(prime_subject_acc_500, 
                       measurevar = "DA",
@@ -702,7 +701,7 @@ ggplot(delayedagg_rmisc_500, aes(x = PrimeCondition, y = DA))+
 @
 
 \subsubsection*{Conditional Recall}
-<<>>=
+<<fig=TRUE>>=
 ## PLOTTING INTERACTION
 agg_final_combined_500 = group_by(final_long_500, Delay, PrimeCondition)%>%
   summarise_at(vars(Accuracy), mean)
@@ -726,1218 +725,1218 @@ agg_rmisc_500 %>% mutate(PrimeCondition = factor(PrimeCondition,
 
 @
 
-\section {ANOVA on Raw Immediate and Delayed}
-
-<<>>=
-raw_final_data = memory[,c(2,34,50,52)] ## note: col 50 and 51 for 125ms
-
-raw_final_data_long <- raw_final_data %>%
-  gather(Delay, Accuracy, ImmediateAccuracy, DelayedAccuracy)
-
-raw_agg_subject = group_by(raw_final_data_long, Subject, PrimeCondition, Delay) %>%
-    summarise_at(vars(Accuracy), mean)
-
-raw_agg_subject$Subject = as.factor(as.character(raw_agg_subject$Subject))
-raw_agg_subject$PrimeCondition = as.factor(as.character(raw_agg_subject$PrimeCondition))
-raw_agg_subject$Delay = as.factor(as.character(raw_agg_subject$Delay))
-
-
-raw_agg = summarySE(raw_agg_subject, 
-                      measurevar = "Accuracy",
-                      groupvars = c("PrimeCondition", "Delay"))
-
-raw_aov = aov(data = raw_agg_subject, Accuracy ~ PrimeCondition*Delay + 
-                      Error(Subject/(PrimeCondition*Delay)))
-  summary(raw_aov)
-  
-  ggplot(raw_agg, aes(x = PrimeCondition, y = Accuracy, fill = Delay))+
- geom_bar(stat = "identity", position = "dodge", width = 0.5)+
-  geom_errorbar(aes(ymin = Accuracy - ci, ymax = Accuracy + ci),
-                width=.05, position=position_dodge(.5)) +
-  theme_few()+
-  scale_fill_solarized()+
-  xlab("Prime Condition") + ylab("Mean Accuracy") + 
-  ggtitle("Mean Accuracy by Prime Condition and Delay")
-@
-
-
-\section {Removing Weak Phon Primes}
-
-<<>>=
-## creating dataframe without problematic items
-memory_removed = memory %>% filter(!TrialList1  %in% c(3,9,17,21, 40, 44, 45, 49, 52,58))
-@
-
-<<>>=
-#memory = subset(memory, memory$Subject != '8' & memory$Subject != '21')
-library(dplyr)
-overall_acc_removed = group_by(memory_removed) %>%
-  summarise_at(vars(ImmediateAccuracy, DelayedAccuracy), mean)
-
-prime_acc_removed = group_by(memory_removed, PrimeCondition) %>%
-  summarise_at(vars(ImmediateAccuracy, DelayedAccuracy), mean)
-
-@
-
-\subsection*{Means per Subject, Per Prime Condition}
-Here, we calculate the means for the prime conditions, but for each subject:
-
-<<>>=
-prime_subject_acc_removed = group_by(memory_removed, Subject, PrimeCondition) %>%
-  summarise_at(vars(ImmediateAccuracy, DelayedAccuracy), mean)
-@
-
-\subsection* {ANOVAs}
-
-Below, we will perform an ANOVA on the mean accuracy in both Immediate and Delayed conditions:
-
-\subsection*{ANOVA for Immediate Recall}
-<<>>=
-prime_subject_acc_removed$PrimeCondition = as.factor(prime_subject_acc_removed$PrimeCondition)
-prime_subject_acc_removed$Subject = as.factor(prime_subject_acc_removed$Subject)
-
-primecondition_immediate_aov_removed = aov(data = prime_subject_acc_removed, 
-                                           ImmediateAccuracy ~ PrimeCondition +
-                                 Error(Subject/PrimeCondition))
-summary(primecondition_immediate_aov_removed)
-
-options(contrasts = c('contr.sum', 'contr.poly'))
-library(lsmeans)
-library(multcomp)
-imm_lsm = lsmeans::lsmeans(primecondition_immediate_aov_removed, c("PrimeCondition"))
-prime_effect = cld(imm_lsm, alpha = 0.05, 
-                adjust = "tukey", details = TRUE)
-library(knitr)
-kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
-
-## IMMEDIATE RECALL
-
-
-library(Rmisc)
-immediateagg_rmisc_removed = summarySE(prime_subject_acc_removed, 
-                      measurevar = "ImmediateAccuracy",
-                      groupvars = c("PrimeCondition"))
-library(ggplot2)
-library(ggthemes)
-ggplot(immediateagg_rmisc_removed, aes(x = PrimeCondition, y = ImmediateAccuracy))+
- geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
-  geom_errorbar(aes(ymin = ImmediateAccuracy - ci, ymax = ImmediateAccuracy + ci),
-                width=.05, position=position_dodge(.5)) +
-  theme_few()+
-  xlab("Prime Condition") + ylab("Mean Accuracy") + 
-  ggtitle("Immediate: Mean Accuracy by Prime Condition")
-@
-\subsection*{Removed Items: Conditional Analysis}
-<<>>=
-library(dplyr)
-conditional_prime_rem = group_by(memory_removed, ImmediateAccuracy, PrimeCondition) %>%
-  summarise_at(vars(DelayedAccuracy), mean)
-
-conditional_prime_sub_rem = group_by(memory_removed, Subject, ImmediateAccuracy, PrimeCondition) %>%
-  summarise_at(vars(DelayedAccuracy), mean)
-
-# only for 125 ms since S8 was old and low accuracy
-#conditional_prime_sub = subset(conditional_prime_sub, conditional_prime_sub$Subject != "8")
-
-## With 28 subjects (up to S29), there are 9 missing cells at this point: we want to do 
-## something about this when we do an ANOVA
-
-conditional_prime_sub_correct = subset(conditional_prime_sub_rem, 
-                                 conditional_prime_sub_rem$ImmediateAccuracy == "1")
-## for 48 ms
-conditional_prime_sub_correct [88,] = c("12", 1, "5_Neutral", 0)
-conditional_prime_sub_correct [89,] = c("12", 1, "3_Semantic", 0)
-conditional_prime_sub_correct [90,] = c("12", 1, "4_Unrelated", 0)
-
-#for 500 ms
-#S36 and S42 have one row each missing
-#conditional_prime_sub_correct[99,] = c("36",1,"5_Neutral", 0 )
-#conditional_prime_sub_correct[100,] = c("42",1,"2_Phon", 0 )
-
-#only for 125 ms
-#conditional_prime_sub_2 = subset(conditional_prime_sub_2, conditional_prime_sub_2$Subject != "21")
-
-@
-
-Merging immediate and delayed into one file:
-<<>>=
-## now we have conditional delayed accuracies in conditional_prime_sub_2
-## and we have immediate accuracies in prime_subject_acc
-## just making sure there are the same subjects in both:
-
-removed_prime_sub_acc = subset(prime_subject_acc_removed, # prime_subject_acc$Subject != '8' &
-                                 prime_subject_acc_removed$Subject != '21')
-
-## now we must combine the two files. 
-
-colnames(conditional_prime_sub_correct) = c("Subject", "IA", "PrimeCondition", "Delayed")
-colnames(removed_prime_sub_acc) = c("Subject", "PrimeCondition", "Immediate", "DA")
-
-final_combined = merge(removed_prime_sub_acc, conditional_prime_sub_correct, 
-                       by = c("Subject", "PrimeCondition"))
-#now we have immediate and delayed accuracy in wide format. need to convert to long format.
-#first we remove uneccesary columns
-final_combined = final_combined[, -c(4,5)]
-library(tidyr)
-final_data_long <- final_combined %>%
-  gather(Delay, Accuracy, Immediate, Delayed)
-  
-final_data_long <- final_data_long[order(final_data_long$Subject),]
-
-final_data_long$Delay = as.factor(as.character(final_data_long$Delay))
-
-
-## for 500 ms counterbalancing: remove S40 (same proc as S30)
-final_data_long$Accuracy = as.numeric(as.character(final_data_long$Accuracy))
-
-final_aov = aov(data = final_data_long, Accuracy ~ Delay*PrimeCondition + 
-                  Error(Subject/(Delay*PrimeCondition)))
-summary(final_aov)
-
-
-
-library(multcomp)
-library(knitr)
-options(contrasts = c('contr.sum', 'contr.poly'))
-
-conditional_lsm = lsmeans::lsmeans(final_aov, c("Delay", "PrimeCondition"))
-prime_effect = cld(conditional_lsm, alpha = 0.05, 
-                adjust = "tukey", details = TRUE, by = "PrimeCondition")
-kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
-
-library(Rmisc)
-agg_rmisc = summarySE(final_data_long, 
-                      measurevar = "Accuracy",
-                      groupvars = c("Delay", "PrimeCondition"))
-
-ggplot(agg_rmisc, aes(x = PrimeCondition, y = Accuracy, fill = Delay))+
- geom_bar(stat = "identity", position = "dodge", width = 0.5)+
-  geom_errorbar(aes(ymin = Accuracy - ci, ymax = Accuracy + ci),
-                width=.05, position=position_dodge(.5)) +
-  theme_few()+
-  scale_fill_solarized()+
-  xlab("Prime Condition") + ylab("Mean Accuracy") + 
-  ggtitle("Mean Accuracy by Prime Condition and Delay")
-
-@
-
-\section {Reaction Time Analysis}
-
-\subsection*{32 ms}
-
-\subsection*{48 ms}
-
-\subsection*{125 ms}
-
-\subsection*{500 ms}
-
-\subsubsection* {RT Immediate}
-<<>>=
-prime_subject_acc_500 = group_by(memory500, Subject, PrimeCondition) %>%
-  summarise_at(vars(ImmediateAccuracy, DelayedAccuracy,RTImmediate, RTDelayed), mean)
-
-prime_subject_acc_500$PrimeCondition = as.factor(prime_subject_acc_500$PrimeCondition)
-prime_subject_acc_500$Subject = as.factor(prime_subject_acc_500$Subject)
-
-RT_imm_aov_500 = aov(data = prime_subject_acc_500, 
-                                      RTImmediate ~ PrimeCondition +
-                                 Error(Subject/PrimeCondition))
-summary(RT_imm_aov_500)
-
-options(contrasts = c('contr.sum', 'contr.poly'))
-library(lsmeans)
-library(multcomp)
-imm_lsm = lsmeans::lsmeans(RT_imm_aov_500, c("PrimeCondition"))
-prime_effect = cld(imm_lsm, alpha = 0.05, 
-                adjust = "tukey", details = TRUE)
-library(knitr)
-kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
-
-@
-
-\subsubsection* {RT Delayed}
-<<>>=
-prime_subject_acc_500$PrimeCondition = as.factor(prime_subject_acc_500$PrimeCondition)
-prime_subject_acc_500$Subject = as.factor(prime_subject_acc_500$Subject)
-
-RT_del_aov_500 = aov(data = prime_subject_acc_500, 
-                                    RTDelayed ~ PrimeCondition +
-                                 Error(Subject/PrimeCondition))
-summary(RT_del_aov_500)
-@
-
-\subsection*{RT Conditional Analysis}
-
-<<>>=
-library(dplyr)
-RT_conditional_prime = group_by(memory, ImmediateAccuracy, PrimeCondition) %>%
-  summarise_at(vars(RTDelayed), mean)
-
-RT_conditional_prime_sub = group_by(memory, Subject, ImmediateAccuracy, 
-                                 PrimeCondition) %>%
-  summarise_at(vars(RTDelayed), mean)
-
-RT_conditional_prime_sub_correct = subset(conditional_prime_sub, 
-                                 conditional_prime_sub$ImmediateAccuracy == "1")
-
-## see the mean RTs delayed for correct and incorrect targets: 
-## to fill missing cells
-RT_prime_acc_immacc = group_by(memory, ImmediateAccuracy, PrimeCondition)%>%
-  summarise_at(vars(RTImmediate, RTDelayed), mean)
-
-## for 48 ms
-
-RT_conditional_prime_sub_correct [89,] = c("12", 1, "3_Semantic", 1494.806 )
-RT_conditional_prime_sub_correct [90,] = c("12", 1, "4_Unrelated", 1418.841 )
-
-#for 500 ms
-#S36 and S42 have one row each missing
-#conditional_prime_sub_correct[99,] = c("36",1,"5_Neutral", 0 )
-#conditional_prime_sub_correct[100,] = c("42",1,"2_Phon", 0 )
-
-#only for 125 ms
-#conditional_prime_sub_2 = subset(conditional_prime_sub_2, conditional_prime_sub_2$Subject != "21")
-
-@
-
-Merging immediate and delayed into one file:
-<<>>=
-## now we have conditional delayed accuracies in conditional_prime_sub_2
-## and we have immediate accuracies in prime_subject_acc
-## just making sure there are the same subjects in both:
-
-RT_removed_prime_sub_acc = subset(prime_subject_acc, # prime_subject_acc$Subject != '8' &
-                                 prime_subject_acc$Subject != '21')
-
-## now we must combine the two files. 
-
-colnames(RT_conditional_prime_sub_correct) = c("Subject", "IA", "PrimeCondition", "Delayed")
-colnames(RT_removed_prime_sub_acc) = c("Subject", "PrimeCondition", "ImmediateAcc", "DA", "Immediate", "RTD")
-
-RT_final_combined = merge(RT_removed_prime_sub_acc, 
-                          RT_conditional_prime_sub_correct, 
-                       by = c("Subject", "PrimeCondition"))
-#now we have immediate and delayed accuracy in wide format. need to convert to long format.
-#first we remove uneccesary columns
-RT_final_combined = RT_final_combined[, -c(3,4,6,7)]
-library(tidyr)
-RT_final_data_long <- RT_final_combined %>%
-  gather(Delay, RT, Immediate, Delayed)
-  
-
-RT_final_data_long <- RT_final_data_long[order(RT_final_data_long$Subject),]
-
-RT_final_data_long$Delay = as.factor(as.character(RT_final_data_long$Delay))
-
-
-RT_final_data_long$RT = as.numeric(as.character(RT_final_data_long$RT))
-
-RT_final_aov = aov(data = RT_final_data_long, RT ~ Delay*PrimeCondition + 
-                  Error(Subject/(Delay*PrimeCondition)))
-summary(RT_final_aov)
-
-
-
-library(multcomp)
-library(knitr)
-options(contrasts = c('contr.sum', 'contr.poly'))
-
-conditional_lsm = lsmeans::lsmeans(RT_final_aov, c("Delay", "PrimeCondition"))
-prime_effect = cld(conditional_lsm, alpha = 0.05, 
-                adjust = "tukey", details = TRUE, by = "PrimeCondition")
-kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
-
-@
-
-\subsection* {Figures}
-
-<<>>=
-## IMMEDIATE RECALL
-
-
-library(Rmisc)
-RT_immediateagg_rmisc = summarySE(prime_subject_acc, 
-                      measurevar = "RTImmediate",
-                      groupvars = c("PrimeCondition"))
-RT_delayedagg_rmisc = summarySE(prime_subject_acc, 
-                      measurevar = "RTDelayed",
-                      groupvars = c("PrimeCondition"))
-## IMMEDIATE
-library(ggplot2)
-library(ggthemes)
-ggplot(RT_immediateagg_rmisc, aes(x = PrimeCondition, y = RTImmediate))+
- geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
-  geom_errorbar(aes(ymin = RTImmediate - ci, ymax = RTImmediate + ci),
-                width=.05, position=position_dodge(.5)) +
-  theme_few()+
-  xlab("Prime Condition") + ylab("Mean RT") + 
-  ggtitle("Immediate: Mean RT by Prime Condition")
-
-#DELAYED
-ggplot(RT_delayedagg_rmisc, aes(x = PrimeCondition, y = RTDelayed))+
- geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
-  geom_errorbar(aes(ymin = RTDelayed - ci, ymax = RTDelayed + ci),
-                width=.05, position=position_dodge(.5)) +
-  theme_few()+
-  xlab("Prime Condition") + ylab("Mean RT") + 
-  ggtitle("Delayed: Mean RT by Prime Condition")
-
-
-## PLOTTING INTERACTION
-RT_agg_final_combined = group_by(RT_final_data_long, Delay, PrimeCondition)%>%
-  summarise_at(vars(RT), mean)
-library(Rmisc)
-RT_agg_rmisc = summarySE(RT_final_data_long, 
-                      measurevar = "RT",
-                      groupvars = c("Delay", "PrimeCondition"))
-
-ggplot(RT_agg_rmisc, aes(x = PrimeCondition, y = RT, fill = Delay))+
- geom_bar(stat = "identity", position = "dodge", width = 0.5)+
-  geom_errorbar(aes(ymin = RT - ci, ymax = RT + ci),
-                width=.05, position=position_dodge(.5)) +
-  theme_few()+
-  xlab("Prime Condition") + ylab("Mean RT") + 
-  ggtitle("Mean RT by Prime Condition and Delay")
-
-@
-
-\section {z-Scoring Analysis}
-
-\subsection*{32 ms}
-
-\subsubsection*{Making the z-scores}
-
-<<>>=
-library(dplyr)
-## aggregate per subject all IVs and DVs
-memory_mean_32 = group_by(memory32, Subject) %>%
-  summarise_at(vars(RTImmediate, RTDelayed), mean)
-colnames(memory_mean_32) = c("Subject", "meanRTimm", "meanRTdel")
-
-memory_sd_32 = group_by(memory32, Subject) %>%
-  summarise_at(vars(RTImmediate, RTDelayed), sd)
-colnames(memory_sd_32) = c("Subject", "sdRTimm", "sdRTdel")
-
-memory_agg_32 = merge(memory_mean_32, memory_sd_32, by = "Subject")
-
-## merge aggregate info with long data
-memory32 = merge(memory32, memory_agg_32, by = "Subject", all.x = T)
-
-## person and grand-mean centered scores using original and aggregate
-library(dplyr)
-memory32 = memory32 %>% mutate(zRT_imm = (RTImmediate - meanRTimm)/sdRTimm,
-                 zRT_del = (RTDelayed - meanRTdel)/sdRTdel)
-
-## checking: subject level means should be zero
-
-sub_mem = group_by(memory32, Subject) %>%
-  summarise_at(vars(zRT_imm, zRT_del), mean)
-@
-
-\subsubsection*{Immediate and Delayed ANOVAS}
-
-<<>>=
-
-z_RT_32 = group_by(memory32, Subject, PrimeCondition) %>%
-  summarise_at(vars(zRT_imm, zRT_del), mean)
-z_RT_32$PrimeCondition = as.factor(as.character(z_RT_32$PrimeCondition))
-z_RT_32$Subject = as.factor(as.character(z_RT_32$Subject))
-
-
-## IMMEDIATE
-
-z_immediate_aov_32 = aov(data = z_RT_32, 
-                                     zRT_imm ~ PrimeCondition +
-                                 Error(Subject/PrimeCondition))
-summary(z_immediate_aov_32)
-
-options(contrasts = c('contr.sum', 'contr.poly'))
-library(lsmeans)
-library(multcomp)
-imm_lsm = lsmeans::lsmeans(z_immediate_aov_32, c("PrimeCondition"))
-prime_effect = cld(imm_lsm, alpha = 0.05, 
-                adjust = "tukey", details = TRUE)
-library(knitr)
-kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
-
-## DELAYED
-
-z_delayed_aov_32 = aov(data = z_RT_32, 
-                                     zRT_del ~ PrimeCondition +
-                                 Error(Subject/PrimeCondition))
-summary(z_delayed_aov_32)
-
-options(contrasts = c('contr.sum', 'contr.poly'))
-library(lsmeans)
-library(multcomp)
-imm_lsm = lsmeans::lsmeans(z_delayed_aov_32, c("PrimeCondition"))
-prime_effect = cld(imm_lsm, alpha = 0.05, 
-                adjust = "tukey", details = TRUE)
-library(knitr)
-kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
-@
-
-\subsubsection*{z-RT Conditional Analysis}
-
-<<>>=
-library(dplyr)
-zRT_cond_32 = group_by(memory32, ImmediateAccuracy, PrimeCondition) %>%
-  summarise_at(vars(zRT_del), mean)
-
-zRT_cond_sub_32 = group_by(memory32, Subject, ImmediateAccuracy, 
-                                 PrimeCondition) %>%
-  summarise_at(vars(zRT_del), mean)
-
-zRT_cond_sub_correct_32 = subset(zRT_cond_sub_32, 
-                                 zRT_cond_sub_32$ImmediateAccuracy == "1")
-
-## see the mean RTs delayed for correct and incorrect targets: 
-## to fill missing cells
-zRT_immacc_32 = group_by(memory32, ImmediateAccuracy, PrimeCondition)%>%
-  summarise_at(vars(zRT_imm, zRT_del), mean)
-
-@
-
-Merging immediate and delayed into one file:
-<<>>=
-## now we have conditional delayed accuracies in cond_sub_correct
-## and we have immediate accuracies in prime_subject_acc
-## now we must combine the two files. 
-
-colnames(zRT_cond_sub_correct_32) = c("Subject", "IA", "PrimeCondition", "Delayed")
-colnames(z_RT_32) = c("Subject", "PrimeCondition", "Immediate", "zRTD")
-
-zRT_final_combined_32 = merge(zRT_cond_sub_correct_32, 
-                          z_RT_32, by = c("Subject", "PrimeCondition"))
-#now we have immediate and delayed accuracy in wide format. need to convert to long format.
-#first we remove uneccesary columns
-zRT_final_combined_32 = zRT_final_combined_32[, -c(3,6)]
-library(tidyr)
-zRT_long_32 <- zRT_final_combined_32 %>%
-  gather(Delay, zRT, Immediate, Delayed)
-  
-
-zRT_long_32 <- zRT_long_32[order(zRT_long_32$Subject),]
-
-zRT_long_32$Delay = as.factor(as.character(zRT_long_32$Delay))
-
-
-zRT_long_32$zRT = as.numeric(as.character(zRT_long_32$zRT))
-zRT_long_32$Subject = as.factor(as.character(zRT_long_32$Subject))
-zRT_final_aov = aov(data = zRT_long_32, zRT ~ Delay*PrimeCondition + 
-                  Error(Subject/(Delay*PrimeCondition)))
-summary(zRT_final_aov)
-
-
-
-library(multcomp)
-library(knitr)
-options(contrasts = c('contr.sum', 'contr.poly'))
-
-conditional_lsm = lsmeans::lsmeans(zRT_final_aov, c("Delay", "PrimeCondition"))
-prime_effect = cld(conditional_lsm, alpha = 0.05, 
-                adjust = "tukey", details = TRUE, by = "PrimeCondition")
-kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
-
-@
-
-\subsubsection*{Figures}
-
-<<>>=
-## IMMEDIATE RECALL
-library(Rmisc)
-zRT_imm = summarySE(z_RT_32, 
-                      measurevar = "Immediate",
-                      groupvars = c("PrimeCondition"))
-zRT_del = summarySE(z_RT_32, 
-                      measurevar = "zRTD",
-                      groupvars = c("PrimeCondition"))
-## IMMEDIATE
-library(ggplot2)
-library(ggthemes)
-zRT_imm %>% mutate(PrimeCondition = factor(PrimeCondition, 
-                                                 levels = unique(PrimeCondition),
-                    labels = c("Identical", "Neutral", 
-                               "Phonological", "Semantic", "Unrelated")))%>%
-  ggplot(aes(x = PrimeCondition, y = Immediate))+
-  geom_bar(stat = "identity", position = "dodge", width = 0.5, 
-           fill = "darkgreen")+
-  geom_errorbar(aes(ymin = Immediate - ci, ymax = Immediate + ci),
-                width=.05, position=position_dodge(.5)) +
-  theme_few()+
-  xlab("Prime Condition") + ylab("Mean RT") + 
-  ggtitle("Immediate: Mean RT by Prime Condition")
-
-#DELAYED
-zRT_del %>% mutate(PrimeCondition = factor(PrimeCondition, 
-                                                 levels = unique(PrimeCondition),
-                    labels = c("Identical", "Neutral", 
-                               "Phonological", "Semantic", "Unrelated")))%>%
-  ggplot(aes(x = PrimeCondition, y = zRTD))+
-  geom_bar(stat = "identity", position = "dodge", width = 0.5, 
-           fill = "darkgreen")+
-  geom_errorbar(aes(ymin = zRTD - ci, ymax = zRTD + ci),
-                width=.05, position=position_dodge(.5)) +
-  theme_few()+
-  xlab("Prime Condition") + ylab("Mean zRT") + 
-  ggtitle("Delayed: Mean zRT by Prime Condition")
-
-
-## PLOTTING INTERACTION
-zRT_agg = group_by(zRT_long_32, Delay, PrimeCondition)%>%
-  summarise_at(vars(zRT), mean)
-library(Rmisc)
-zRT_agg_rmisc = summarySE(zRT_long_32, 
-                      measurevar = "zRT",
-                      groupvars = c("Delay", "PrimeCondition"))
-
-zRT_agg_rmisc %>% mutate(PrimeCondition = factor(PrimeCondition, 
-                                                 levels = unique(PrimeCondition),
-                    labels = c("Identical", "Neutral", 
-                               "Phonological", "Semantic", "Unrelated")))%>%
-  ggplot(aes(x = PrimeCondition, y = zRT, fill = Delay))+
- geom_bar(stat = "identity", position = "dodge", width = 0.5)+
-  geom_errorbar(aes(ymin = zRT - ci, ymax = zRT + ci),
-                width=.05, position=position_dodge(.5)) +
-  theme_few()+
-  xlab("Prime Condition") + ylab("Mean RT") + 
-  ggtitle("Mean RT by Prime Condition and Delay")
-@
-
-
-\subsection*{48 ms}
-
-\subsubsection*{Making the z-scores}
-
-<<>>=
-library(dplyr)
-## aggregate per subject all IVs and DVs
-memory_mean_48 = group_by(memory48, Subject) %>%
-  summarise_at(vars(RTImmediate, RTDelayed), mean)
-colnames(memory_mean_48) = c("Subject", "meanRTimm", "meanRTdel")
-
-memory_sd_48 = group_by(memory48, Subject) %>%
-  summarise_at(vars(RTImmediate, RTDelayed), sd)
-colnames(memory_sd_48) = c("Subject", "sdRTimm", "sdRTdel")
-
-memory_agg_48 = merge(memory_mean_48, memory_sd_48, by = "Subject")
-
-## merge aggregate info with long data
-memory48 = merge(memory48, memory_agg_48, by = "Subject", all.x = T)
-
-## person and grand-mean centered scores using original and aggregate
-library(dplyr)
-memory48 = memory48 %>% mutate(zRT_imm = (RTImmediate - meanRTimm)/sdRTimm,
-                 zRT_del = (RTDelayed - meanRTdel)/sdRTdel)
-
-## checking: subject level means should be zero
-
-sub_mem = group_by(memory48, Subject) %>%
-  summarise_at(vars(zRT_imm, zRT_del), mean)
-@
-
-\subsubsection*{Immediate and Delayed ANOVAS}
-
-<<>>=
-
-z_RT_48 = group_by(memory48, Subject, PrimeCondition) %>%
-  summarise_at(vars(zRT_imm, zRT_del), mean)
-z_RT_48$PrimeCondition = as.factor(as.character(z_RT_48$PrimeCondition))
-z_RT_48$Subject = as.factor(as.character(z_RT_48$Subject))
-
-
-## IMMEDIATE
-
-z_immediate_aov_48 = aov(data = z_RT_48, 
-                                     zRT_imm ~ PrimeCondition +
-                                 Error(Subject/PrimeCondition))
-summary(z_immediate_aov_48)
-
-options(contrasts = c('contr.sum', 'contr.poly'))
-library(lsmeans)
-library(multcomp)
-imm_lsm = lsmeans::lsmeans(z_immediate_aov_48, c("PrimeCondition"))
-prime_effect = cld(imm_lsm, alpha = 0.05, 
-                adjust = "tukey", details = TRUE)
-library(knitr)
-kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
-
-## DELAYED
-
-z_delayed_aov_48 = aov(data = z_RT_48, 
-                                     zRT_del ~ PrimeCondition +
-                                 Error(Subject/PrimeCondition))
-summary(z_delayed_aov_48)
-
-options(contrasts = c('contr.sum', 'contr.poly'))
-library(lsmeans)
-library(multcomp)
-imm_lsm = lsmeans::lsmeans(z_delayed_aov_48, c("PrimeCondition"))
-prime_effect = cld(imm_lsm, alpha = 0.05, 
-                adjust = "tukey", details = TRUE)
-library(knitr)
-kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
-@
-
-\subsubsection*{z-RT Conditional Analysis}
-
-<<>>=
-library(dplyr)
-zRT_cond_48 = group_by(memory48, ImmediateAccuracy, PrimeCondition) %>%
-  summarise_at(vars(zRT_del), mean)
-
-zRT_cond_sub_48 = group_by(memory48, Subject, ImmediateAccuracy, 
-                                 PrimeCondition) %>%
-  summarise_at(vars(zRT_del), mean)
-
-zRT_cond_sub_correct_48 = subset(zRT_cond_sub_48, 
-                                 zRT_cond_sub_48$ImmediateAccuracy == "1")
-
-## see the mean RTs delayed for correct and incorrect targets: 
-## to fill missing cells
-zRT_immacc_48 = group_by(memory48, ImmediateAccuracy, PrimeCondition)%>%
-  summarise_at(vars(zRT_imm, zRT_del), mean)
-
-## for 48 ms
-
-zRT_cond_sub_correct_48 [89,] = c("12", 1, "Semantic", -0.099613631 )
-zRT_cond_sub_correct_48 [90,] = c("12", 1, "UnSemantic", -0.115493136 )
-
-@
-
-Merging immediate and delayed into one file:
-<<>>=
-## now we have conditional delayed accuracies in cond_sub_correct
-## and we have immediate accuracies in prime_subject_acc
-## now we must combine the two files. 
-
-colnames(zRT_cond_sub_correct_48) = c("Subject", "IA", "PrimeCondition", "Delayed")
-colnames(z_RT_48) = c("Subject", "PrimeCondition", "Immediate", "zRTD")
-
-zRT_final_combined_48 = merge(zRT_cond_sub_correct_48, 
-                          z_RT_48, by = c("Subject", "PrimeCondition"))
-#now we have immediate and delayed accuracy in wide format. need to convert to long format.
-#first we remove uneccesary columns
-zRT_final_combined_48 = zRT_final_combined_48[, -c(3,6)]
-library(tidyr)
-zRT_long_48 <- zRT_final_combined_48 %>%
-  gather(Delay, zRT, Immediate, Delayed)
-  
-
-zRT_long_48 <- zRT_long_48[order(zRT_long_48$Subject),]
-
-zRT_long_48$Delay = as.factor(as.character(zRT_long_48$Delay))
-
-
-zRT_long_48$zRT = as.numeric(as.character(zRT_long_48$zRT))
-
-zRT_final_aov = aov(data = zRT_long_48, zRT ~ Delay*PrimeCondition + 
-                  Error(Subject/(Delay*PrimeCondition)))
-summary(zRT_final_aov)
-
-
-
-library(multcomp)
-library(knitr)
-options(contrasts = c('contr.sum', 'contr.poly'))
-
-conditional_lsm = lsmeans::lsmeans(zRT_final_aov, c("Delay", "PrimeCondition"))
-prime_effect = cld(conditional_lsm, alpha = 0.05, 
-                adjust = "tukey", details = TRUE, by = "Delay")
-kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
-
-@
-
-\subsubsection*{Figures}
-
-<<>>=
-## IMMEDIATE RECALL
-library(Rmisc)
-zRT_imm = summarySE(z_RT_48, 
-                      measurevar = "Immediate",
-                      groupvars = c("PrimeCondition"))
-zRT_del = summarySE(z_RT_48, 
-                      measurevar = "zRTD",
-                      groupvars = c("PrimeCondition"))
-## IMMEDIATE
-library(ggplot2)
-library(ggthemes)
-zRT_imm %>% mutate(PrimeCondition = factor(PrimeCondition, 
-                                                 levels = unique(PrimeCondition),
-                    labels = c("Identical", "Neutral", 
-                               "Phonological", "Semantic", "Unrelated")))%>%
-  ggplot(aes(x = PrimeCondition, y = Immediate))+
-  geom_bar(stat = "identity", position = "dodge", width = 0.5, 
-           fill = "darkgreen")+
-  geom_errorbar(aes(ymin = Immediate - ci, ymax = Immediate + ci),
-                width=.05, position=position_dodge(.5)) +
-  theme_few()+
-  xlab("Prime Condition") + ylab("Mean RT") + 
-  ggtitle("Immediate: Mean RT by Prime Condition")
-
-#DELAYED
-zRT_del %>% mutate(PrimeCondition = factor(PrimeCondition, 
-                                                 levels = unique(PrimeCondition),
-                    labels = c("Identical", "Neutral", 
-                               "Phonological", "Semantic", "Unrelated")))%>%
-ggplot(aes(x = PrimeCondition, y = zRTD))+
- geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
-  geom_errorbar(aes(ymin = zRTD - ci, ymax = zRTD + ci),
-                width=.05, position=position_dodge(.5)) +
-  theme_few()+
-  xlab("Prime Condition") + ylab("Mean zRT") + 
-  ggtitle("Delayed: Mean zRT by Prime Condition")
-
-
-## PLOTTING INTERACTION
-zRT_agg = group_by(zRT_long_48, Delay, PrimeCondition)%>%
-  summarise_at(vars(zRT), mean)
-library(Rmisc)
-zRT_agg_rmisc = summarySE(zRT_long_48, 
-                      measurevar = "zRT",
-                      groupvars = c("Delay", "PrimeCondition"))
-zRT_agg_rmisc %>% mutate(PrimeCondition = factor(PrimeCondition, 
-                                                 levels = unique(PrimeCondition),
-                    labels = c("Identical", "Neutral", 
-                               "Phonological", "Semantic", "Unrelated")))%>%
-ggplot(aes(x = PrimeCondition, y = zRT, fill = Delay))+
- geom_bar(stat = "identity", position = "dodge", width = 0.5)+
-  geom_errorbar(aes(ymin = zRT - ci, ymax = zRT + ci),
-                width=.05, position=position_dodge(.5)) +
-  theme_few()+
-  xlab("Prime Condition") + ylab("Mean RT") + 
-  ggtitle("Mean RT by Prime Condition and Delay")
-
-@
-
-
-\subsection*{125 ms}
-
-\subsubsection*{Making the z-scores}
-
-<<>>=
-library(dplyr)
-## aggregate per subject all IVs and DVs
-memory_mean_125 = group_by(memory125, Subject) %>%
-  summarise_at(vars(RTImmediate, RTDelayed), mean)
-colnames(memory_mean_125) = c("Subject", "meanRTimm", "meanRTdel")
-
-memory_sd_125 = group_by(memory125, Subject) %>%
-  summarise_at(vars(RTImmediate, RTDelayed), sd)
-colnames(memory_sd_125) = c("Subject", "sdRTimm", "sdRTdel")
-
-memory_agg_125 = merge(memory_mean_125, memory_sd_125, by = "Subject")
-
-## merge aggregate info with long data
-memory125 = merge(memory125, memory_agg_125, by = "Subject", all.x = T)
-
-## person and grand-mean centered scores using original and aggregate
-library(dplyr)
-memory125 = memory125 %>% mutate(zRT_imm = (RTImmediate - meanRTimm)/sdRTimm,
-                 zRT_del = (RTDelayed - meanRTdel)/sdRTdel)
-
-## checking: subject level means should be zero
-
-sub_mem = group_by(memory125, Subject) %>%
-  summarise_at(vars(zRT_imm, zRT_del), mean)
-@
-
-\subsubsection*{Immediate and Delayed ANOVAS}
-
-<<>>=
-
-z_RT_125 = group_by(memory125, Subject, PrimeCondition) %>%
-  summarise_at(vars(zRT_imm, zRT_del), mean)
-z_RT_125$PrimeCondition = as.factor(as.character(z_RT_125$PrimeCondition))
-z_RT_125$Subject = as.factor(as.character(z_RT_125$Subject))
-
-
-## IMMEDIATE
-
-z_immediate_aov_125 = aov(data = z_RT_125, 
-                                     zRT_imm ~ PrimeCondition +
-                                 Error(Subject/PrimeCondition))
-summary(z_immediate_aov_125)
-
-options(contrasts = c('contr.sum', 'contr.poly'))
-library(lsmeans)
-library(multcomp)
-imm_lsm = lsmeans::lsmeans(z_immediate_aov_125, c("PrimeCondition"))
-prime_effect = cld(imm_lsm, alpha = 0.05, 
-                adjust = "tukey", details = TRUE)
-library(knitr)
-kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
-
-## DELAYED
-
-z_delayed_aov_125 = aov(data = z_RT_125, 
-                                     zRT_del ~ PrimeCondition +
-                                 Error(Subject/PrimeCondition))
-summary(z_delayed_aov_125)
-
-options(contrasts = c('contr.sum', 'contr.poly'))
-library(lsmeans)
-library(multcomp)
-imm_lsm = lsmeans::lsmeans(z_delayed_aov_125, c("PrimeCondition"))
-prime_effect = cld(imm_lsm, alpha = 0.05, 
-                adjust = "tukey", details = TRUE)
-library(knitr)
-kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
-@
-
-\subsubsection*{z-RT Conditional Analysis}
-
-<<>>=
-library(dplyr)
-zRT_cond_125 = group_by(memory125, ImmediateAccuracy, PrimeCondition) %>%
-  summarise_at(vars(zRT_del), mean)
-
-zRT_cond_sub_125 = group_by(memory125, Subject, ImmediateAccuracy, 
-                                 PrimeCondition) %>%
-  summarise_at(vars(zRT_del), mean)
-
-# only for 125 ms since S8 was old and low accuracy
-#conditional_prime_sub = subset(conditional_prime_sub, conditional_prime_sub$Subject != "8")
-
-## With 28 subjects (up to S29), there are 9 missing cells at this point: we want to do 
-## something about this when we do an ANOVA
-
-zRT_cond_sub_correct_125 = subset(zRT_cond_sub_125, 
-                                 zRT_cond_sub_125$ImmediateAccuracy == "1")
-
-## see the mean RTs delayed for correct and incorrect targets: 
-## to fill missing cells
-zRT_immacc_125 = group_by(memory125, ImmediateAccuracy, PrimeCondition)%>%
-  summarise_at(vars(zRT_imm, zRT_del), mean)
-
-## for 48 ms
-
-#zRT_conditional_prime_sub_correct [89,] = c("12", 1, "3_Semantic", -0.099613631 )
-#zRT_conditional_prime_sub_correct [90,] = c("12", 1, "4_Unrelated", -0.115493136 )
-
-#for 500 ms
-#S36 and S42 have one row each missing
-zRT_cond_sub_correct_125[99,] = c("36",1,"Neutral",-0.135651850 )
-zRT_cond_sub_correct_125[100,] = c("42",1,"Phonological", -0.142223900 )
-
-#only for 125 ms
-#conditional_prime_sub_2 = subset(conditional_prime_sub_2, conditional_prime_sub_2$Subject != "21")
-
-@
-
-Merging immediate and delayed into one file:
-<<>>=
-## now we have conditional delayed accuracies in cond_sub_correct
-## and we have immediate accuracies in prime_subject_acc
-## now we must combine the two files. 
-
-colnames(zRT_cond_sub_correct_125) = c("Subject", "IA", "PrimeCondition", "Delayed")
-colnames(z_RT_125) = c("Subject", "PrimeCondition", "Immediate", "zRTD")
-
-zRT_final_combined_125 = merge(zRT_cond_sub_correct_125, 
-                          z_RT_125, by = c("Subject", "PrimeCondition"))
-#now we have immediate and delayed accuracy in wide format. need to convert to long format.
-#first we remove uneccesary columns
-zRT_final_combined_125 = zRT_final_combined_125[, -c(3,6)]
-library(tidyr)
-zRT_long_125 <- zRT_final_combined_125 %>%
-  gather(Delay, zRT, Immediate, Delayed)
-  
-
-zRT_long_125 <- zRT_long_125[order(zRT_long_125$Subject),]
-
-zRT_long_125$Delay = as.factor(as.character(zRT_long_125$Delay))
-
-
-zRT_long_125$zRT = as.numeric(as.character(zRT_long_125$zRT))
-
-zRT_final_aov = aov(data = zRT_long_125, zRT ~ Delay*PrimeCondition + 
-                  Error(Subject/(Delay*PrimeCondition)))
-summary(zRT_final_aov)
-
-
-
-library(multcomp)
-library(knitr)
-options(contrasts = c('contr.sum', 'contr.poly'))
-
-conditional_lsm = lsmeans::lsmeans(zRT_final_aov, c("Delay", "PrimeCondition"))
-prime_effect = cld(conditional_lsm, alpha = 0.05, 
-                adjust = "tukey", details = TRUE, by = "PrimeCondition")
-kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
-
-@
-
-\subsubsection*{Figures}
-
-<<>>=
-## IMMEDIATE RECALL
-library(Rmisc)
-zRT_imm = summarySE(z_RT_125, 
-                      measurevar = "Immediate",
-                      groupvars = c("PrimeCondition"))
-zRT_del = summarySE(z_RT_125, 
-                      measurevar = "zRTD",
-                      groupvars = c("PrimeCondition"))
-## IMMEDIATE
-library(ggplot2)
-library(ggthemes)
-ggplot(zRT_imm, aes(x = PrimeCondition, y = Immediate))+
- geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
-  geom_errorbar(aes(ymin = Immediate - ci, ymax = Immediate + ci),
-                width=.05, position=position_dodge(.5)) +
-  theme_few()+
-  xlab("Prime Condition") + ylab("Mean RT") + 
-  ggtitle("Immediate: Mean RT by Prime Condition")
-
-#DELAYED
-ggplot(zRT_del, aes(x = PrimeCondition, y = zRTD))+
- geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
-  geom_errorbar(aes(ymin = zRTD - ci, ymax = zRTD + ci),
-                width=.05, position=position_dodge(.5)) +
-  theme_few()+
-  xlab("Prime Condition") + ylab("Mean zRT") + 
-  ggtitle("Delayed: Mean zRT by Prime Condition")
-
-
-## PLOTTING INTERACTION
-zRT_agg = group_by(zRT_long_125, Delay, PrimeCondition)%>%
-  summarise_at(vars(zRT), mean)
-library(Rmisc)
-zRT_agg_rmisc = summarySE(zRT_long_125, 
-                      measurevar = "zRT",
-                      groupvars = c("Delay", "PrimeCondition"))
-
-ggplot(zRT_agg_rmisc, aes(x = PrimeCondition, y = zRT, fill = Delay))+
- geom_bar(stat = "identity", position = "dodge", width = 0.5)+
-  geom_errorbar(aes(ymin = zRT - ci, ymax = zRT + ci),
-                width=.05, position=position_dodge(.5)) +
-  theme_few()+
-  xlab("Prime Condition") + ylab("Mean RT") + 
-  ggtitle("Mean RT by Prime Condition and Delay")
-
-@
-
-
-\subsection*{500 ms}
-
-\subsubsection*{Making the z-scores}
-
-<<>>=
-library(dplyr)
-## aggregate per subject all IVs and DVs
-memory_mean_500 = group_by(memory500, Subject) %>%
-  summarise_at(vars(RTImmediate, RTDelayed), mean)
-colnames(memory_mean_500) = c("Subject", "meanRTimm", "meanRTdel")
-
-memory_sd_500 = group_by(memory500, Subject) %>%
-  summarise_at(vars(RTImmediate, RTDelayed), sd)
-colnames(memory_sd_500) = c("Subject", "sdRTimm", "sdRTdel")
-
-memory_agg_500 = merge(memory_mean_500, memory_sd_500, by = "Subject")
-
-## merge aggregate info with long data
-memory500 = merge(memory500, memory_agg_500, by = "Subject", all.x = T)
-
-## person and grand-mean centered scores using original and aggregate
-library(dplyr)
-memory500 = memory500 %>% mutate(zRT_imm = (RTImmediate - meanRTimm)/sdRTimm,
-                 zRT_del = (RTDelayed - meanRTdel)/sdRTdel)
-
-## checking: subject level means should be zero
-
-sub_mem = group_by(memory500, Subject) %>%
-  summarise_at(vars(zRT_imm, zRT_del), mean)
-@
-
-\subsubsection*{Immediate and Delayed ANOVAS}
-
-<<>>=
-
-z_RT_500 = group_by(memory500, Subject, PrimeCondition) %>%
-  summarise_at(vars(zRT_imm, zRT_del), mean)
-z_RT_500$PrimeCondition = as.factor(as.character(z_RT_500$PrimeCondition))
-z_RT_500$Subject = as.factor(as.character(z_RT_500$Subject))
-
-
-## IMMEDIATE
-
-z_immediate_aov_500 = aov(data = z_RT_500, 
-                                     zRT_imm ~ PrimeCondition +
-                                 Error(Subject/PrimeCondition))
-summary(z_immediate_aov_500)
-
-options(contrasts = c('contr.sum', 'contr.poly'))
-library(lsmeans)
-library(multcomp)
-imm_lsm = lsmeans::lsmeans(z_immediate_aov_500, c("PrimeCondition"))
-prime_effect = cld(imm_lsm, alpha = 0.05, 
-                adjust = "tukey", details = TRUE)
-library(knitr)
-kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
-
-## DELAYED
-
-z_delayed_aov_500 = aov(data = z_RT_500, 
-                                     zRT_del ~ PrimeCondition +
-                                 Error(Subject/PrimeCondition))
-summary(z_delayed_aov_500)
-
-options(contrasts = c('contr.sum', 'contr.poly'))
-library(lsmeans)
-library(multcomp)
-imm_lsm = lsmeans::lsmeans(z_delayed_aov_500, c("PrimeCondition"))
-prime_effect = cld(imm_lsm, alpha = 0.05, 
-                adjust = "tukey", details = TRUE)
-library(knitr)
-kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
-@
-
-\subsubsection*{z-RT Conditional Analysis}
-
-<<>>=
-library(dplyr)
-zRT_cond_500 = group_by(memory500, ImmediateAccuracy, PrimeCondition) %>%
-  summarise_at(vars(zRT_del), mean)
-
-zRT_cond_sub_500 = group_by(memory500, Subject, ImmediateAccuracy, 
-                                 PrimeCondition) %>%
-  summarise_at(vars(zRT_del), mean)
-
-# only for 125 ms since S8 was old and low accuracy
-#conditional_prime_sub = subset(conditional_prime_sub, conditional_prime_sub$Subject != "8")
-
-## With 28 subjects (up to S29), there are 9 missing cells at this point: we want to do 
-## something about this when we do an ANOVA
-
-zRT_cond_sub_correct_500 = subset(zRT_cond_sub_500, 
-                                 zRT_cond_sub_500$ImmediateAccuracy == "1")
-
-## see the mean RTs delayed for correct and incorrect targets: 
-## to fill missing cells
-zRT_immacc_500 = group_by(memory500, ImmediateAccuracy, PrimeCondition)%>%
-  summarise_at(vars(zRT_imm, zRT_del), mean)
-
-## for 48 ms
-
-#zRT_conditional_prime_sub_correct [89,] = c("12", 1, "3_Semantic", -0.099613631 )
-#zRT_conditional_prime_sub_correct [90,] = c("12", 1, "4_Unrelated", -0.115493136 )
-
-#for 500 ms
-#S36 and S42 have one row each missing
-zRT_cond_sub_correct_500[99,] = c("36",1,"Neutral",-0.135651850 )
-zRT_cond_sub_correct_500[100,] = c("42",1,"Phonological", -0.142223900 )
-
-#only for 125 ms
-#conditional_prime_sub_2 = subset(conditional_prime_sub_2, conditional_prime_sub_2$Subject != "21")
-
-@
-
-Merging immediate and delayed into one file:
-<<>>=
-## now we have conditional delayed accuracies in cond_sub_correct
-## and we have immediate accuracies in prime_subject_acc
-## now we must combine the two files. 
-
-colnames(zRT_cond_sub_correct_500) = c("Subject", "IA", "PrimeCondition", "Delayed")
-colnames(z_RT_500) = c("Subject", "PrimeCondition", "Immediate", "zRTD")
-
-zRT_final_combined_500 = merge(zRT_cond_sub_correct_500, 
-                          z_RT_500, by = c("Subject", "PrimeCondition"))
-#now we have immediate and delayed accuracy in wide format. need to convert to long format.
-#first we remove uneccesary columns
-zRT_final_combined_500 = zRT_final_combined_500[, -c(3,6)]
-library(tidyr)
-zRT_long_500 <- zRT_final_combined_500 %>%
-  gather(Delay, zRT, Immediate, Delayed)
-  
-
-zRT_long_500 <- zRT_long_500[order(zRT_long_500$Subject),]
-
-zRT_long_500$Delay = as.factor(as.character(zRT_long_500$Delay))
-
-
-zRT_long_500$zRT = as.numeric(as.character(zRT_long_500$zRT))
-
-zRT_final_aov = aov(data = zRT_long_500, zRT ~ Delay*PrimeCondition + 
-                  Error(Subject/(Delay*PrimeCondition)))
-summary(zRT_final_aov)
-
-
-
-library(multcomp)
-library(knitr)
-options(contrasts = c('contr.sum', 'contr.poly'))
-
-conditional_lsm = lsmeans::lsmeans(zRT_final_aov, c("Delay", "PrimeCondition"))
-prime_effect = cld(conditional_lsm, alpha = 0.05, 
-                adjust = "tukey", details = TRUE, by = "Delay")
-kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
-
-@
-
-\subsubsection*{Figures}
-
-<<>>=
-## IMMEDIATE RECALL
-library(Rmisc)
-zRT_imm = summarySE(z_RT_500, 
-                      measurevar = "Immediate",
-                      groupvars = c("PrimeCondition"))
-zRT_del = summarySE(z_RT_500, 
-                      measurevar = "zRTD",
-                      groupvars = c("PrimeCondition"))
-## IMMEDIATE
-library(ggplot2)
-library(ggthemes)
-zRT_imm %>% mutate(PrimeCondition = factor(PrimeCondition, 
-                                                 levels = unique(PrimeCondition),
-                    labels = c("Identical", "Neutral", 
-                               "Phonological", "Semantic", "Unrelated")))%>%
-  ggplot(aes(x = PrimeCondition, y = Immediate))+
-  geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
-  geom_errorbar(aes(ymin = Immediate - ci, ymax = Immediate + ci),
-                width=.05, position=position_dodge(.5)) +
-  theme_few()+
-  xlab("Prime Condition") + ylab("Mean RT") + 
-  ggtitle("Immediate: Mean RT by Prime Condition")
-
-#DELAYED
-zRT_del %>% mutate(PrimeCondition = factor(PrimeCondition, 
-                                                 levels = unique(PrimeCondition),
-                    labels = c("Identical", "Neutral", 
-                               "Phonological", "Semantic", "Unrelated")))%>%
-  ggplot(aes(x = PrimeCondition, y = zRTD))+
- geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
-  geom_errorbar(aes(ymin = zRTD - ci, ymax = zRTD + ci),
-                width=.05, position=position_dodge(.5)) +
-  theme_few()+
-  xlab("Prime Condition") + ylab("Mean zRT") + 
-  ggtitle("Delayed: Mean zRT by Prime Condition")
-
-
-## PLOTTING INTERACTION
-zRT_agg = group_by(zRT_long_500, Delay, PrimeCondition)%>%
-  summarise_at(vars(zRT), mean)
-library(Rmisc)
-zRT_agg_rmisc = summarySE(zRT_long_500, 
-                      measurevar = "zRT",
-                      groupvars = c("Delay", "PrimeCondition"))
-
-zRT_agg_rmisc %>% mutate(PrimeCondition = factor(PrimeCondition, 
-                                                 levels = unique(PrimeCondition),
-                    labels = c("Identical", "Neutral", 
-                               "Phonological", "Semantic", "Unrelated")))%>%
-  ggplot( aes(x = PrimeCondition, y = zRT, fill = Delay))+
- geom_bar(stat = "identity", position = "dodge", width = 0.5)+
-  geom_errorbar(aes(ymin = zRT - ci, ymax = zRT + ci),
-                width=.05, position=position_dodge(.5)) +
-  theme_few()+
-  xlab("Prime Condition") + ylab("Mean RT") + 
-  ggtitle("Mean RT by Prime Condition and Delay")
-
-@
-
+% \section {ANOVA on Raw Immediate and Delayed}
+% 
+% <<>>=
+% raw_final_data = memory[,c(2,34,50,52)] ## note: col 50 and 51 for 125ms
+% 
+% raw_final_data_long <- raw_final_data %>%
+%   gather(Delay, Accuracy, ImmediateAccuracy, DelayedAccuracy)
+% 
+% raw_agg_subject = group_by(raw_final_data_long, Subject, PrimeCondition, Delay) %>%
+%     summarise_at(vars(Accuracy), mean)
+% 
+% raw_agg_subject$Subject = as.factor(as.character(raw_agg_subject$Subject))
+% raw_agg_subject$PrimeCondition = as.factor(as.character(raw_agg_subject$PrimeCondition))
+% raw_agg_subject$Delay = as.factor(as.character(raw_agg_subject$Delay))
+% 
+% 
+% raw_agg = summarySE(raw_agg_subject, 
+%                       measurevar = "Accuracy",
+%                       groupvars = c("PrimeCondition", "Delay"))
+% 
+% raw_aov = aov(data = raw_agg_subject, Accuracy ~ PrimeCondition*Delay + 
+%                       Error(Subject/(PrimeCondition*Delay)))
+%   summary(raw_aov)
+%   
+%   ggplot(raw_agg, aes(x = PrimeCondition, y = Accuracy, fill = Delay))+
+%  geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+%   geom_errorbar(aes(ymin = Accuracy - ci, ymax = Accuracy + ci),
+%                 width=.05, position=position_dodge(.5)) +
+%   theme_few()+
+%   scale_fill_solarized()+
+%   xlab("Prime Condition") + ylab("Mean Accuracy") + 
+%   ggtitle("Mean Accuracy by Prime Condition and Delay")
+% @
+% 
+% 
+% \section {Removing Weak Phon Primes}
+% 
+% <<>>=
+% ## creating dataframe without problematic items
+% memory_removed = memory %>% filter(!TrialList1  %in% c(3,9,17,21, 40, 44, 45, 49, 52,58))
+% @
+% 
+% <<>>=
+% #memory = subset(memory, memory$Subject != '8' & memory$Subject != '21')
+% library(dplyr)
+% overall_acc_removed = group_by(memory_removed) %>%
+%   summarise_at(vars(ImmediateAccuracy, DelayedAccuracy), mean)
+% 
+% prime_acc_removed = group_by(memory_removed, PrimeCondition) %>%
+%   summarise_at(vars(ImmediateAccuracy, DelayedAccuracy), mean)
+% 
+% @
+% 
+% \subsection*{Means per Subject, Per Prime Condition}
+% Here, we calculate the means for the prime conditions, but for each subject:
+% 
+% <<>>=
+% prime_subject_acc_removed = group_by(memory_removed, Subject, PrimeCondition) %>%
+%   summarise_at(vars(ImmediateAccuracy, DelayedAccuracy), mean)
+% @
+% 
+% \subsection* {ANOVAs}
+% 
+% Below, we will perform an ANOVA on the mean accuracy in both Immediate and Delayed conditions:
+% 
+% \subsection*{ANOVA for Immediate Recall}
+% <<>>=
+% prime_subject_acc_removed$PrimeCondition = as.factor(prime_subject_acc_removed$PrimeCondition)
+% prime_subject_acc_removed$Subject = as.factor(prime_subject_acc_removed$Subject)
+% 
+% primecondition_immediate_aov_removed = aov(data = prime_subject_acc_removed, 
+%                                            ImmediateAccuracy ~ PrimeCondition +
+%                                  Error(Subject/PrimeCondition))
+% summary(primecondition_immediate_aov_removed)
+% 
+% options(contrasts = c('contr.sum', 'contr.poly'))
+% library(lsmeans)
+% library(multcomp)
+% imm_lsm = lsmeans::lsmeans(primecondition_immediate_aov_removed, c("PrimeCondition"))
+% prime_effect = cld(imm_lsm, alpha = 0.05, 
+%                 adjust = "tukey", details = TRUE)
+% library(knitr)
+% kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
+% 
+% ## IMMEDIATE RECALL
+% 
+% 
+% library(Rmisc)
+% immediateagg_rmisc_removed = summarySE(prime_subject_acc_removed, 
+%                       measurevar = "ImmediateAccuracy",
+%                       groupvars = c("PrimeCondition"))
+% library(ggplot2)
+% library(ggthemes)
+% ggplot(immediateagg_rmisc_removed, aes(x = PrimeCondition, y = ImmediateAccuracy))+
+%  geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
+%   geom_errorbar(aes(ymin = ImmediateAccuracy - ci, ymax = ImmediateAccuracy + ci),
+%                 width=.05, position=position_dodge(.5)) +
+%   theme_few()+
+%   xlab("Prime Condition") + ylab("Mean Accuracy") + 
+%   ggtitle("Immediate: Mean Accuracy by Prime Condition")
+% @
+% \subsection*{Removed Items: Conditional Analysis}
+% <<>>=
+% library(dplyr)
+% conditional_prime_rem = group_by(memory_removed, ImmediateAccuracy, PrimeCondition) %>%
+%   summarise_at(vars(DelayedAccuracy), mean)
+% 
+% conditional_prime_sub_rem = group_by(memory_removed, Subject, ImmediateAccuracy, PrimeCondition) %>%
+%   summarise_at(vars(DelayedAccuracy), mean)
+% 
+% # only for 125 ms since S8 was old and low accuracy
+% #conditional_prime_sub = subset(conditional_prime_sub, conditional_prime_sub$Subject != "8")
+% 
+% ## With 28 subjects (up to S29), there are 9 missing cells at this point: we want to do 
+% ## something about this when we do an ANOVA
+% 
+% conditional_prime_sub_correct = subset(conditional_prime_sub_rem, 
+%                                  conditional_prime_sub_rem$ImmediateAccuracy == "1")
+% ## for 48 ms
+% conditional_prime_sub_correct [88,] = c("12", 1, "5_Neutral", 0)
+% conditional_prime_sub_correct [89,] = c("12", 1, "3_Semantic", 0)
+% conditional_prime_sub_correct [90,] = c("12", 1, "4_Unrelated", 0)
+% 
+% #for 500 ms
+% #S36 and S42 have one row each missing
+% #conditional_prime_sub_correct[99,] = c("36",1,"5_Neutral", 0 )
+% #conditional_prime_sub_correct[100,] = c("42",1,"2_Phon", 0 )
+% 
+% #only for 125 ms
+% #conditional_prime_sub_2 = subset(conditional_prime_sub_2, conditional_prime_sub_2$Subject != "21")
+% 
+% @
+% 
+% Merging immediate and delayed into one file:
+% <<>>=
+% ## now we have conditional delayed accuracies in conditional_prime_sub_2
+% ## and we have immediate accuracies in prime_subject_acc
+% ## just making sure there are the same subjects in both:
+% 
+% removed_prime_sub_acc = subset(prime_subject_acc_removed, # prime_subject_acc$Subject != '8' &
+%                                  prime_subject_acc_removed$Subject != '21')
+% 
+% ## now we must combine the two files. 
+% 
+% colnames(conditional_prime_sub_correct) = c("Subject", "IA", "PrimeCondition", "Delayed")
+% colnames(removed_prime_sub_acc) = c("Subject", "PrimeCondition", "Immediate", "DA")
+% 
+% final_combined = merge(removed_prime_sub_acc, conditional_prime_sub_correct, 
+%                        by = c("Subject", "PrimeCondition"))
+% #now we have immediate and delayed accuracy in wide format. need to convert to long format.
+% #first we remove uneccesary columns
+% final_combined = final_combined[, -c(4,5)]
+% library(tidyr)
+% final_data_long <- final_combined %>%
+%   gather(Delay, Accuracy, Immediate, Delayed)
+%   
+% final_data_long <- final_data_long[order(final_data_long$Subject),]
+% 
+% final_data_long$Delay = as.factor(as.character(final_data_long$Delay))
+% 
+% 
+% ## for 500 ms counterbalancing: remove S40 (same proc as S30)
+% final_data_long$Accuracy = as.numeric(as.character(final_data_long$Accuracy))
+% 
+% final_aov = aov(data = final_data_long, Accuracy ~ Delay*PrimeCondition + 
+%                   Error(Subject/(Delay*PrimeCondition)))
+% summary(final_aov)
+% 
+% 
+% 
+% library(multcomp)
+% library(knitr)
+% options(contrasts = c('contr.sum', 'contr.poly'))
+% 
+% conditional_lsm = lsmeans::lsmeans(final_aov, c("Delay", "PrimeCondition"))
+% prime_effect = cld(conditional_lsm, alpha = 0.05, 
+%                 adjust = "tukey", details = TRUE, by = "PrimeCondition")
+% kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
+% 
+% library(Rmisc)
+% agg_rmisc = summarySE(final_data_long, 
+%                       measurevar = "Accuracy",
+%                       groupvars = c("Delay", "PrimeCondition"))
+% 
+% ggplot(agg_rmisc, aes(x = PrimeCondition, y = Accuracy, fill = Delay))+
+%  geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+%   geom_errorbar(aes(ymin = Accuracy - ci, ymax = Accuracy + ci),
+%                 width=.05, position=position_dodge(.5)) +
+%   theme_few()+
+%   scale_fill_solarized()+
+%   xlab("Prime Condition") + ylab("Mean Accuracy") + 
+%   ggtitle("Mean Accuracy by Prime Condition and Delay")
+% 
+% @
+% 
+% \section {Reaction Time Analysis}
+% 
+% \subsection*{32 ms}
+% 
+% \subsection*{48 ms}
+% 
+% \subsection*{125 ms}
+% 
+% \subsection*{500 ms}
+% 
+% \subsubsection* {RT Immediate}
+% <<>>=
+% prime_subject_acc_500 = group_by(memory500, Subject, PrimeCondition) %>%
+%   summarise_at(vars(ImmediateAccuracy, DelayedAccuracy,RTImmediate, RTDelayed), mean)
+% 
+% prime_subject_acc_500$PrimeCondition = as.factor(prime_subject_acc_500$PrimeCondition)
+% prime_subject_acc_500$Subject = as.factor(prime_subject_acc_500$Subject)
+% 
+% RT_imm_aov_500 = aov(data = prime_subject_acc_500, 
+%                                       RTImmediate ~ PrimeCondition +
+%                                  Error(Subject/PrimeCondition))
+% summary(RT_imm_aov_500)
+% 
+% options(contrasts = c('contr.sum', 'contr.poly'))
+% library(lsmeans)
+% library(multcomp)
+% imm_lsm = lsmeans::lsmeans(RT_imm_aov_500, c("PrimeCondition"))
+% prime_effect = cld(imm_lsm, alpha = 0.05, 
+%                 adjust = "tukey", details = TRUE)
+% library(knitr)
+% kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
+% 
+% @
+% 
+% \subsubsection* {RT Delayed}
+% <<>>=
+% prime_subject_acc_500$PrimeCondition = as.factor(prime_subject_acc_500$PrimeCondition)
+% prime_subject_acc_500$Subject = as.factor(prime_subject_acc_500$Subject)
+% 
+% RT_del_aov_500 = aov(data = prime_subject_acc_500, 
+%                                     RTDelayed ~ PrimeCondition +
+%                                  Error(Subject/PrimeCondition))
+% summary(RT_del_aov_500)
+% @
+% 
+% \subsection*{RT Conditional Analysis}
+% 
+% <<>>=
+% library(dplyr)
+% RT_conditional_prime = group_by(memory, ImmediateAccuracy, PrimeCondition) %>%
+%   summarise_at(vars(RTDelayed), mean)
+% 
+% RT_conditional_prime_sub = group_by(memory, Subject, ImmediateAccuracy, 
+%                                  PrimeCondition) %>%
+%   summarise_at(vars(RTDelayed), mean)
+% 
+% RT_conditional_prime_sub_correct = subset(conditional_prime_sub, 
+%                                  conditional_prime_sub$ImmediateAccuracy == "1")
+% 
+% ## see the mean RTs delayed for correct and incorrect targets: 
+% ## to fill missing cells
+% RT_prime_acc_immacc = group_by(memory, ImmediateAccuracy, PrimeCondition)%>%
+%   summarise_at(vars(RTImmediate, RTDelayed), mean)
+% 
+% ## for 48 ms
+% 
+% RT_conditional_prime_sub_correct [89,] = c("12", 1, "3_Semantic", 1494.806 )
+% RT_conditional_prime_sub_correct [90,] = c("12", 1, "4_Unrelated", 1418.841 )
+% 
+% #for 500 ms
+% #S36 and S42 have one row each missing
+% #conditional_prime_sub_correct[99,] = c("36",1,"5_Neutral", 0 )
+% #conditional_prime_sub_correct[100,] = c("42",1,"2_Phon", 0 )
+% 
+% #only for 125 ms
+% #conditional_prime_sub_2 = subset(conditional_prime_sub_2, conditional_prime_sub_2$Subject != "21")
+% 
+% @
+% 
+% Merging immediate and delayed into one file:
+% <<>>=
+% ## now we have conditional delayed accuracies in conditional_prime_sub_2
+% ## and we have immediate accuracies in prime_subject_acc
+% ## just making sure there are the same subjects in both:
+% 
+% RT_removed_prime_sub_acc = subset(prime_subject_acc, # prime_subject_acc$Subject != '8' &
+%                                  prime_subject_acc$Subject != '21')
+% 
+% ## now we must combine the two files. 
+% 
+% colnames(RT_conditional_prime_sub_correct) = c("Subject", "IA", "PrimeCondition", "Delayed")
+% colnames(RT_removed_prime_sub_acc) = c("Subject", "PrimeCondition", "ImmediateAcc", "DA", "Immediate", "RTD")
+% 
+% RT_final_combined = merge(RT_removed_prime_sub_acc, 
+%                           RT_conditional_prime_sub_correct, 
+%                        by = c("Subject", "PrimeCondition"))
+% #now we have immediate and delayed accuracy in wide format. need to convert to long format.
+% #first we remove uneccesary columns
+% RT_final_combined = RT_final_combined[, -c(3,4,6,7)]
+% library(tidyr)
+% RT_final_data_long <- RT_final_combined %>%
+%   gather(Delay, RT, Immediate, Delayed)
+%   
+% 
+% RT_final_data_long <- RT_final_data_long[order(RT_final_data_long$Subject),]
+% 
+% RT_final_data_long$Delay = as.factor(as.character(RT_final_data_long$Delay))
+% 
+% 
+% RT_final_data_long$RT = as.numeric(as.character(RT_final_data_long$RT))
+% 
+% RT_final_aov = aov(data = RT_final_data_long, RT ~ Delay*PrimeCondition + 
+%                   Error(Subject/(Delay*PrimeCondition)))
+% summary(RT_final_aov)
+% 
+% 
+% 
+% library(multcomp)
+% library(knitr)
+% options(contrasts = c('contr.sum', 'contr.poly'))
+% 
+% conditional_lsm = lsmeans::lsmeans(RT_final_aov, c("Delay", "PrimeCondition"))
+% prime_effect = cld(conditional_lsm, alpha = 0.05, 
+%                 adjust = "tukey", details = TRUE, by = "PrimeCondition")
+% kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
+% 
+% @
+% 
+% \subsection* {Figures}
+% 
+% <<>>=
+% ## IMMEDIATE RECALL
+% 
+% 
+% library(Rmisc)
+% RT_immediateagg_rmisc = summarySE(prime_subject_acc, 
+%                       measurevar = "RTImmediate",
+%                       groupvars = c("PrimeCondition"))
+% RT_delayedagg_rmisc = summarySE(prime_subject_acc, 
+%                       measurevar = "RTDelayed",
+%                       groupvars = c("PrimeCondition"))
+% ## IMMEDIATE
+% library(ggplot2)
+% library(ggthemes)
+% ggplot(RT_immediateagg_rmisc, aes(x = PrimeCondition, y = RTImmediate))+
+%  geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
+%   geom_errorbar(aes(ymin = RTImmediate - ci, ymax = RTImmediate + ci),
+%                 width=.05, position=position_dodge(.5)) +
+%   theme_few()+
+%   xlab("Prime Condition") + ylab("Mean RT") + 
+%   ggtitle("Immediate: Mean RT by Prime Condition")
+% 
+% #DELAYED
+% ggplot(RT_delayedagg_rmisc, aes(x = PrimeCondition, y = RTDelayed))+
+%  geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
+%   geom_errorbar(aes(ymin = RTDelayed - ci, ymax = RTDelayed + ci),
+%                 width=.05, position=position_dodge(.5)) +
+%   theme_few()+
+%   xlab("Prime Condition") + ylab("Mean RT") + 
+%   ggtitle("Delayed: Mean RT by Prime Condition")
+% 
+% 
+% ## PLOTTING INTERACTION
+% RT_agg_final_combined = group_by(RT_final_data_long, Delay, PrimeCondition)%>%
+%   summarise_at(vars(RT), mean)
+% library(Rmisc)
+% RT_agg_rmisc = summarySE(RT_final_data_long, 
+%                       measurevar = "RT",
+%                       groupvars = c("Delay", "PrimeCondition"))
+% 
+% ggplot(RT_agg_rmisc, aes(x = PrimeCondition, y = RT, fill = Delay))+
+%  geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+%   geom_errorbar(aes(ymin = RT - ci, ymax = RT + ci),
+%                 width=.05, position=position_dodge(.5)) +
+%   theme_few()+
+%   xlab("Prime Condition") + ylab("Mean RT") + 
+%   ggtitle("Mean RT by Prime Condition and Delay")
+% 
+% @
+% 
+% \section {z-Scoring Analysis}
+% 
+% \subsection*{32 ms}
+% 
+% \subsubsection*{Making the z-scores}
+% 
+% <<>>=
+% library(dplyr)
+% ## aggregate per subject all IVs and DVs
+% memory_mean_32 = group_by(memory32, Subject) %>%
+%   summarise_at(vars(RTImmediate, RTDelayed), mean)
+% colnames(memory_mean_32) = c("Subject", "meanRTimm", "meanRTdel")
+% 
+% memory_sd_32 = group_by(memory32, Subject) %>%
+%   summarise_at(vars(RTImmediate, RTDelayed), sd)
+% colnames(memory_sd_32) = c("Subject", "sdRTimm", "sdRTdel")
+% 
+% memory_agg_32 = merge(memory_mean_32, memory_sd_32, by = "Subject")
+% 
+% ## merge aggregate info with long data
+% memory32 = merge(memory32, memory_agg_32, by = "Subject", all.x = T)
+% 
+% ## person and grand-mean centered scores using original and aggregate
+% library(dplyr)
+% memory32 = memory32 %>% mutate(zRT_imm = (RTImmediate - meanRTimm)/sdRTimm,
+%                  zRT_del = (RTDelayed - meanRTdel)/sdRTdel)
+% 
+% ## checking: subject level means should be zero
+% 
+% sub_mem = group_by(memory32, Subject) %>%
+%   summarise_at(vars(zRT_imm, zRT_del), mean)
+% @
+% 
+% \subsubsection*{Immediate and Delayed ANOVAS}
+% 
+% <<>>=
+% 
+% z_RT_32 = group_by(memory32, Subject, PrimeCondition) %>%
+%   summarise_at(vars(zRT_imm, zRT_del), mean)
+% z_RT_32$PrimeCondition = as.factor(as.character(z_RT_32$PrimeCondition))
+% z_RT_32$Subject = as.factor(as.character(z_RT_32$Subject))
+% 
+% 
+% ## IMMEDIATE
+% 
+% z_immediate_aov_32 = aov(data = z_RT_32, 
+%                                      zRT_imm ~ PrimeCondition +
+%                                  Error(Subject/PrimeCondition))
+% summary(z_immediate_aov_32)
+% 
+% options(contrasts = c('contr.sum', 'contr.poly'))
+% library(lsmeans)
+% library(multcomp)
+% imm_lsm = lsmeans::lsmeans(z_immediate_aov_32, c("PrimeCondition"))
+% prime_effect = cld(imm_lsm, alpha = 0.05, 
+%                 adjust = "tukey", details = TRUE)
+% library(knitr)
+% kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
+% 
+% ## DELAYED
+% 
+% z_delayed_aov_32 = aov(data = z_RT_32, 
+%                                      zRT_del ~ PrimeCondition +
+%                                  Error(Subject/PrimeCondition))
+% summary(z_delayed_aov_32)
+% 
+% options(contrasts = c('contr.sum', 'contr.poly'))
+% library(lsmeans)
+% library(multcomp)
+% imm_lsm = lsmeans::lsmeans(z_delayed_aov_32, c("PrimeCondition"))
+% prime_effect = cld(imm_lsm, alpha = 0.05, 
+%                 adjust = "tukey", details = TRUE)
+% library(knitr)
+% kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
+% @
+% 
+% \subsubsection*{z-RT Conditional Analysis}
+% 
+% <<>>=
+% library(dplyr)
+% zRT_cond_32 = group_by(memory32, ImmediateAccuracy, PrimeCondition) %>%
+%   summarise_at(vars(zRT_del), mean)
+% 
+% zRT_cond_sub_32 = group_by(memory32, Subject, ImmediateAccuracy, 
+%                                  PrimeCondition) %>%
+%   summarise_at(vars(zRT_del), mean)
+% 
+% zRT_cond_sub_correct_32 = subset(zRT_cond_sub_32, 
+%                                  zRT_cond_sub_32$ImmediateAccuracy == "1")
+% 
+% ## see the mean RTs delayed for correct and incorrect targets: 
+% ## to fill missing cells
+% zRT_immacc_32 = group_by(memory32, ImmediateAccuracy, PrimeCondition)%>%
+%   summarise_at(vars(zRT_imm, zRT_del), mean)
+% 
+% @
+% 
+% Merging immediate and delayed into one file:
+% <<>>=
+% ## now we have conditional delayed accuracies in cond_sub_correct
+% ## and we have immediate accuracies in prime_subject_acc
+% ## now we must combine the two files. 
+% 
+% colnames(zRT_cond_sub_correct_32) = c("Subject", "IA", "PrimeCondition", "Delayed")
+% colnames(z_RT_32) = c("Subject", "PrimeCondition", "Immediate", "zRTD")
+% 
+% zRT_final_combined_32 = merge(zRT_cond_sub_correct_32, 
+%                           z_RT_32, by = c("Subject", "PrimeCondition"))
+% #now we have immediate and delayed accuracy in wide format. need to convert to long format.
+% #first we remove uneccesary columns
+% zRT_final_combined_32 = zRT_final_combined_32[, -c(3,6)]
+% library(tidyr)
+% zRT_long_32 <- zRT_final_combined_32 %>%
+%   gather(Delay, zRT, Immediate, Delayed)
+%   
+% 
+% zRT_long_32 <- zRT_long_32[order(zRT_long_32$Subject),]
+% 
+% zRT_long_32$Delay = as.factor(as.character(zRT_long_32$Delay))
+% 
+% 
+% zRT_long_32$zRT = as.numeric(as.character(zRT_long_32$zRT))
+% zRT_long_32$Subject = as.factor(as.character(zRT_long_32$Subject))
+% zRT_final_aov = aov(data = zRT_long_32, zRT ~ Delay*PrimeCondition + 
+%                   Error(Subject/(Delay*PrimeCondition)))
+% summary(zRT_final_aov)
+% 
+% 
+% 
+% library(multcomp)
+% library(knitr)
+% options(contrasts = c('contr.sum', 'contr.poly'))
+% 
+% conditional_lsm = lsmeans::lsmeans(zRT_final_aov, c("Delay", "PrimeCondition"))
+% prime_effect = cld(conditional_lsm, alpha = 0.05, 
+%                 adjust = "tukey", details = TRUE, by = "PrimeCondition")
+% kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
+% 
+% @
+% 
+% \subsubsection*{Figures}
+% 
+% <<>>=
+% ## IMMEDIATE RECALL
+% library(Rmisc)
+% zRT_imm = summarySE(z_RT_32, 
+%                       measurevar = "Immediate",
+%                       groupvars = c("PrimeCondition"))
+% zRT_del = summarySE(z_RT_32, 
+%                       measurevar = "zRTD",
+%                       groupvars = c("PrimeCondition"))
+% ## IMMEDIATE
+% library(ggplot2)
+% library(ggthemes)
+% zRT_imm %>% mutate(PrimeCondition = factor(PrimeCondition, 
+%                                                  levels = unique(PrimeCondition),
+%                     labels = c("Identical", "Neutral", 
+%                                "Phonological", "Semantic", "Unrelated")))%>%
+%   ggplot(aes(x = PrimeCondition, y = Immediate))+
+%   geom_bar(stat = "identity", position = "dodge", width = 0.5, 
+%            fill = "darkgreen")+
+%   geom_errorbar(aes(ymin = Immediate - ci, ymax = Immediate + ci),
+%                 width=.05, position=position_dodge(.5)) +
+%   theme_few()+
+%   xlab("Prime Condition") + ylab("Mean RT") + 
+%   ggtitle("Immediate: Mean RT by Prime Condition")
+% 
+% #DELAYED
+% zRT_del %>% mutate(PrimeCondition = factor(PrimeCondition, 
+%                                                  levels = unique(PrimeCondition),
+%                     labels = c("Identical", "Neutral", 
+%                                "Phonological", "Semantic", "Unrelated")))%>%
+%   ggplot(aes(x = PrimeCondition, y = zRTD))+
+%   geom_bar(stat = "identity", position = "dodge", width = 0.5, 
+%            fill = "darkgreen")+
+%   geom_errorbar(aes(ymin = zRTD - ci, ymax = zRTD + ci),
+%                 width=.05, position=position_dodge(.5)) +
+%   theme_few()+
+%   xlab("Prime Condition") + ylab("Mean zRT") + 
+%   ggtitle("Delayed: Mean zRT by Prime Condition")
+% 
+% 
+% ## PLOTTING INTERACTION
+% zRT_agg = group_by(zRT_long_32, Delay, PrimeCondition)%>%
+%   summarise_at(vars(zRT), mean)
+% library(Rmisc)
+% zRT_agg_rmisc = summarySE(zRT_long_32, 
+%                       measurevar = "zRT",
+%                       groupvars = c("Delay", "PrimeCondition"))
+% 
+% zRT_agg_rmisc %>% mutate(PrimeCondition = factor(PrimeCondition, 
+%                                                  levels = unique(PrimeCondition),
+%                     labels = c("Identical", "Neutral", 
+%                                "Phonological", "Semantic", "Unrelated")))%>%
+%   ggplot(aes(x = PrimeCondition, y = zRT, fill = Delay))+
+%  geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+%   geom_errorbar(aes(ymin = zRT - ci, ymax = zRT + ci),
+%                 width=.05, position=position_dodge(.5)) +
+%   theme_few()+
+%   xlab("Prime Condition") + ylab("Mean RT") + 
+%   ggtitle("Mean RT by Prime Condition and Delay")
+% @
+% 
+% 
+% \subsection*{48 ms}
+% 
+% \subsubsection*{Making the z-scores}
+% 
+% <<>>=
+% library(dplyr)
+% ## aggregate per subject all IVs and DVs
+% memory_mean_48 = group_by(memory48, Subject) %>%
+%   summarise_at(vars(RTImmediate, RTDelayed), mean)
+% colnames(memory_mean_48) = c("Subject", "meanRTimm", "meanRTdel")
+% 
+% memory_sd_48 = group_by(memory48, Subject) %>%
+%   summarise_at(vars(RTImmediate, RTDelayed), sd)
+% colnames(memory_sd_48) = c("Subject", "sdRTimm", "sdRTdel")
+% 
+% memory_agg_48 = merge(memory_mean_48, memory_sd_48, by = "Subject")
+% 
+% ## merge aggregate info with long data
+% memory48 = merge(memory48, memory_agg_48, by = "Subject", all.x = T)
+% 
+% ## person and grand-mean centered scores using original and aggregate
+% library(dplyr)
+% memory48 = memory48 %>% mutate(zRT_imm = (RTImmediate - meanRTimm)/sdRTimm,
+%                  zRT_del = (RTDelayed - meanRTdel)/sdRTdel)
+% 
+% ## checking: subject level means should be zero
+% 
+% sub_mem = group_by(memory48, Subject) %>%
+%   summarise_at(vars(zRT_imm, zRT_del), mean)
+% @
+% 
+% \subsubsection*{Immediate and Delayed ANOVAS}
+% 
+% <<>>=
+% 
+% z_RT_48 = group_by(memory48, Subject, PrimeCondition) %>%
+%   summarise_at(vars(zRT_imm, zRT_del), mean)
+% z_RT_48$PrimeCondition = as.factor(as.character(z_RT_48$PrimeCondition))
+% z_RT_48$Subject = as.factor(as.character(z_RT_48$Subject))
+% 
+% 
+% ## IMMEDIATE
+% 
+% z_immediate_aov_48 = aov(data = z_RT_48, 
+%                                      zRT_imm ~ PrimeCondition +
+%                                  Error(Subject/PrimeCondition))
+% summary(z_immediate_aov_48)
+% 
+% options(contrasts = c('contr.sum', 'contr.poly'))
+% library(lsmeans)
+% library(multcomp)
+% imm_lsm = lsmeans::lsmeans(z_immediate_aov_48, c("PrimeCondition"))
+% prime_effect = cld(imm_lsm, alpha = 0.05, 
+%                 adjust = "tukey", details = TRUE)
+% library(knitr)
+% kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
+% 
+% ## DELAYED
+% 
+% z_delayed_aov_48 = aov(data = z_RT_48, 
+%                                      zRT_del ~ PrimeCondition +
+%                                  Error(Subject/PrimeCondition))
+% summary(z_delayed_aov_48)
+% 
+% options(contrasts = c('contr.sum', 'contr.poly'))
+% library(lsmeans)
+% library(multcomp)
+% imm_lsm = lsmeans::lsmeans(z_delayed_aov_48, c("PrimeCondition"))
+% prime_effect = cld(imm_lsm, alpha = 0.05, 
+%                 adjust = "tukey", details = TRUE)
+% library(knitr)
+% kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
+% @
+% 
+% \subsubsection*{z-RT Conditional Analysis}
+% 
+% <<>>=
+% library(dplyr)
+% zRT_cond_48 = group_by(memory48, ImmediateAccuracy, PrimeCondition) %>%
+%   summarise_at(vars(zRT_del), mean)
+% 
+% zRT_cond_sub_48 = group_by(memory48, Subject, ImmediateAccuracy, 
+%                                  PrimeCondition) %>%
+%   summarise_at(vars(zRT_del), mean)
+% 
+% zRT_cond_sub_correct_48 = subset(zRT_cond_sub_48, 
+%                                  zRT_cond_sub_48$ImmediateAccuracy == "1")
+% 
+% ## see the mean RTs delayed for correct and incorrect targets: 
+% ## to fill missing cells
+% zRT_immacc_48 = group_by(memory48, ImmediateAccuracy, PrimeCondition)%>%
+%   summarise_at(vars(zRT_imm, zRT_del), mean)
+% 
+% ## for 48 ms
+% 
+% zRT_cond_sub_correct_48 [89,] = c("12", 1, "Semantic", -0.099613631 )
+% zRT_cond_sub_correct_48 [90,] = c("12", 1, "UnSemantic", -0.115493136 )
+% 
+% @
+% 
+% Merging immediate and delayed into one file:
+% <<>>=
+% ## now we have conditional delayed accuracies in cond_sub_correct
+% ## and we have immediate accuracies in prime_subject_acc
+% ## now we must combine the two files. 
+% 
+% colnames(zRT_cond_sub_correct_48) = c("Subject", "IA", "PrimeCondition", "Delayed")
+% colnames(z_RT_48) = c("Subject", "PrimeCondition", "Immediate", "zRTD")
+% 
+% zRT_final_combined_48 = merge(zRT_cond_sub_correct_48, 
+%                           z_RT_48, by = c("Subject", "PrimeCondition"))
+% #now we have immediate and delayed accuracy in wide format. need to convert to long format.
+% #first we remove uneccesary columns
+% zRT_final_combined_48 = zRT_final_combined_48[, -c(3,6)]
+% library(tidyr)
+% zRT_long_48 <- zRT_final_combined_48 %>%
+%   gather(Delay, zRT, Immediate, Delayed)
+%   
+% 
+% zRT_long_48 <- zRT_long_48[order(zRT_long_48$Subject),]
+% 
+% zRT_long_48$Delay = as.factor(as.character(zRT_long_48$Delay))
+% 
+% 
+% zRT_long_48$zRT = as.numeric(as.character(zRT_long_48$zRT))
+% 
+% zRT_final_aov = aov(data = zRT_long_48, zRT ~ Delay*PrimeCondition + 
+%                   Error(Subject/(Delay*PrimeCondition)))
+% summary(zRT_final_aov)
+% 
+% 
+% 
+% library(multcomp)
+% library(knitr)
+% options(contrasts = c('contr.sum', 'contr.poly'))
+% 
+% conditional_lsm = lsmeans::lsmeans(zRT_final_aov, c("Delay", "PrimeCondition"))
+% prime_effect = cld(conditional_lsm, alpha = 0.05, 
+%                 adjust = "tukey", details = TRUE, by = "Delay")
+% kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
+% 
+% @
+% 
+% \subsubsection*{Figures}
+% 
+% <<>>=
+% ## IMMEDIATE RECALL
+% library(Rmisc)
+% zRT_imm = summarySE(z_RT_48, 
+%                       measurevar = "Immediate",
+%                       groupvars = c("PrimeCondition"))
+% zRT_del = summarySE(z_RT_48, 
+%                       measurevar = "zRTD",
+%                       groupvars = c("PrimeCondition"))
+% ## IMMEDIATE
+% library(ggplot2)
+% library(ggthemes)
+% zRT_imm %>% mutate(PrimeCondition = factor(PrimeCondition, 
+%                                                  levels = unique(PrimeCondition),
+%                     labels = c("Identical", "Neutral", 
+%                                "Phonological", "Semantic", "Unrelated")))%>%
+%   ggplot(aes(x = PrimeCondition, y = Immediate))+
+%   geom_bar(stat = "identity", position = "dodge", width = 0.5, 
+%            fill = "darkgreen")+
+%   geom_errorbar(aes(ymin = Immediate - ci, ymax = Immediate + ci),
+%                 width=.05, position=position_dodge(.5)) +
+%   theme_few()+
+%   xlab("Prime Condition") + ylab("Mean RT") + 
+%   ggtitle("Immediate: Mean RT by Prime Condition")
+% 
+% #DELAYED
+% zRT_del %>% mutate(PrimeCondition = factor(PrimeCondition, 
+%                                                  levels = unique(PrimeCondition),
+%                     labels = c("Identical", "Neutral", 
+%                                "Phonological", "Semantic", "Unrelated")))%>%
+% ggplot(aes(x = PrimeCondition, y = zRTD))+
+%  geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
+%   geom_errorbar(aes(ymin = zRTD - ci, ymax = zRTD + ci),
+%                 width=.05, position=position_dodge(.5)) +
+%   theme_few()+
+%   xlab("Prime Condition") + ylab("Mean zRT") + 
+%   ggtitle("Delayed: Mean zRT by Prime Condition")
+% 
+% 
+% ## PLOTTING INTERACTION
+% zRT_agg = group_by(zRT_long_48, Delay, PrimeCondition)%>%
+%   summarise_at(vars(zRT), mean)
+% library(Rmisc)
+% zRT_agg_rmisc = summarySE(zRT_long_48, 
+%                       measurevar = "zRT",
+%                       groupvars = c("Delay", "PrimeCondition"))
+% zRT_agg_rmisc %>% mutate(PrimeCondition = factor(PrimeCondition, 
+%                                                  levels = unique(PrimeCondition),
+%                     labels = c("Identical", "Neutral", 
+%                                "Phonological", "Semantic", "Unrelated")))%>%
+% ggplot(aes(x = PrimeCondition, y = zRT, fill = Delay))+
+%  geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+%   geom_errorbar(aes(ymin = zRT - ci, ymax = zRT + ci),
+%                 width=.05, position=position_dodge(.5)) +
+%   theme_few()+
+%   xlab("Prime Condition") + ylab("Mean RT") + 
+%   ggtitle("Mean RT by Prime Condition and Delay")
+% 
+% @
+% 
+% 
+% \subsection*{125 ms}
+% 
+% \subsubsection*{Making the z-scores}
+% 
+% <<>>=
+% library(dplyr)
+% ## aggregate per subject all IVs and DVs
+% memory_mean_125 = group_by(memory125, Subject) %>%
+%   summarise_at(vars(RTImmediate, RTDelayed), mean)
+% colnames(memory_mean_125) = c("Subject", "meanRTimm", "meanRTdel")
+% 
+% memory_sd_125 = group_by(memory125, Subject) %>%
+%   summarise_at(vars(RTImmediate, RTDelayed), sd)
+% colnames(memory_sd_125) = c("Subject", "sdRTimm", "sdRTdel")
+% 
+% memory_agg_125 = merge(memory_mean_125, memory_sd_125, by = "Subject")
+% 
+% ## merge aggregate info with long data
+% memory125 = merge(memory125, memory_agg_125, by = "Subject", all.x = T)
+% 
+% ## person and grand-mean centered scores using original and aggregate
+% library(dplyr)
+% memory125 = memory125 %>% mutate(zRT_imm = (RTImmediate - meanRTimm)/sdRTimm,
+%                  zRT_del = (RTDelayed - meanRTdel)/sdRTdel)
+% 
+% ## checking: subject level means should be zero
+% 
+% sub_mem = group_by(memory125, Subject) %>%
+%   summarise_at(vars(zRT_imm, zRT_del), mean)
+% @
+% 
+% \subsubsection*{Immediate and Delayed ANOVAS}
+% 
+% <<>>=
+% 
+% z_RT_125 = group_by(memory125, Subject, PrimeCondition) %>%
+%   summarise_at(vars(zRT_imm, zRT_del), mean)
+% z_RT_125$PrimeCondition = as.factor(as.character(z_RT_125$PrimeCondition))
+% z_RT_125$Subject = as.factor(as.character(z_RT_125$Subject))
+% 
+% 
+% ## IMMEDIATE
+% 
+% z_immediate_aov_125 = aov(data = z_RT_125, 
+%                                      zRT_imm ~ PrimeCondition +
+%                                  Error(Subject/PrimeCondition))
+% summary(z_immediate_aov_125)
+% 
+% options(contrasts = c('contr.sum', 'contr.poly'))
+% library(lsmeans)
+% library(multcomp)
+% imm_lsm = lsmeans::lsmeans(z_immediate_aov_125, c("PrimeCondition"))
+% prime_effect = cld(imm_lsm, alpha = 0.05, 
+%                 adjust = "tukey", details = TRUE)
+% library(knitr)
+% kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
+% 
+% ## DELAYED
+% 
+% z_delayed_aov_125 = aov(data = z_RT_125, 
+%                                      zRT_del ~ PrimeCondition +
+%                                  Error(Subject/PrimeCondition))
+% summary(z_delayed_aov_125)
+% 
+% options(contrasts = c('contr.sum', 'contr.poly'))
+% library(lsmeans)
+% library(multcomp)
+% imm_lsm = lsmeans::lsmeans(z_delayed_aov_125, c("PrimeCondition"))
+% prime_effect = cld(imm_lsm, alpha = 0.05, 
+%                 adjust = "tukey", details = TRUE)
+% library(knitr)
+% kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
+% @
+% 
+% \subsubsection*{z-RT Conditional Analysis}
+% 
+% <<>>=
+% library(dplyr)
+% zRT_cond_125 = group_by(memory125, ImmediateAccuracy, PrimeCondition) %>%
+%   summarise_at(vars(zRT_del), mean)
+% 
+% zRT_cond_sub_125 = group_by(memory125, Subject, ImmediateAccuracy, 
+%                                  PrimeCondition) %>%
+%   summarise_at(vars(zRT_del), mean)
+% 
+% # only for 125 ms since S8 was old and low accuracy
+% #conditional_prime_sub = subset(conditional_prime_sub, conditional_prime_sub$Subject != "8")
+% 
+% ## With 28 subjects (up to S29), there are 9 missing cells at this point: we want to do 
+% ## something about this when we do an ANOVA
+% 
+% zRT_cond_sub_correct_125 = subset(zRT_cond_sub_125, 
+%                                  zRT_cond_sub_125$ImmediateAccuracy == "1")
+% 
+% ## see the mean RTs delayed for correct and incorrect targets: 
+% ## to fill missing cells
+% zRT_immacc_125 = group_by(memory125, ImmediateAccuracy, PrimeCondition)%>%
+%   summarise_at(vars(zRT_imm, zRT_del), mean)
+% 
+% ## for 48 ms
+% 
+% #zRT_conditional_prime_sub_correct [89,] = c("12", 1, "3_Semantic", -0.099613631 )
+% #zRT_conditional_prime_sub_correct [90,] = c("12", 1, "4_Unrelated", -0.115493136 )
+% 
+% #for 500 ms
+% #S36 and S42 have one row each missing
+% zRT_cond_sub_correct_125[99,] = c("36",1,"Neutral",-0.135651850 )
+% zRT_cond_sub_correct_125[100,] = c("42",1,"Phonological", -0.142223900 )
+% 
+% #only for 125 ms
+% #conditional_prime_sub_2 = subset(conditional_prime_sub_2, conditional_prime_sub_2$Subject != "21")
+% 
+% @
+% 
+% Merging immediate and delayed into one file:
+% <<>>=
+% ## now we have conditional delayed accuracies in cond_sub_correct
+% ## and we have immediate accuracies in prime_subject_acc
+% ## now we must combine the two files. 
+% 
+% colnames(zRT_cond_sub_correct_125) = c("Subject", "IA", "PrimeCondition", "Delayed")
+% colnames(z_RT_125) = c("Subject", "PrimeCondition", "Immediate", "zRTD")
+% 
+% zRT_final_combined_125 = merge(zRT_cond_sub_correct_125, 
+%                           z_RT_125, by = c("Subject", "PrimeCondition"))
+% #now we have immediate and delayed accuracy in wide format. need to convert to long format.
+% #first we remove uneccesary columns
+% zRT_final_combined_125 = zRT_final_combined_125[, -c(3,6)]
+% library(tidyr)
+% zRT_long_125 <- zRT_final_combined_125 %>%
+%   gather(Delay, zRT, Immediate, Delayed)
+%   
+% 
+% zRT_long_125 <- zRT_long_125[order(zRT_long_125$Subject),]
+% 
+% zRT_long_125$Delay = as.factor(as.character(zRT_long_125$Delay))
+% 
+% 
+% zRT_long_125$zRT = as.numeric(as.character(zRT_long_125$zRT))
+% 
+% zRT_final_aov = aov(data = zRT_long_125, zRT ~ Delay*PrimeCondition + 
+%                   Error(Subject/(Delay*PrimeCondition)))
+% summary(zRT_final_aov)
+% 
+% 
+% 
+% library(multcomp)
+% library(knitr)
+% options(contrasts = c('contr.sum', 'contr.poly'))
+% 
+% conditional_lsm = lsmeans::lsmeans(zRT_final_aov, c("Delay", "PrimeCondition"))
+% prime_effect = cld(conditional_lsm, alpha = 0.05, 
+%                 adjust = "tukey", details = TRUE, by = "PrimeCondition")
+% kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
+% 
+% @
+% 
+% \subsubsection*{Figures}
+% 
+% <<>>=
+% ## IMMEDIATE RECALL
+% library(Rmisc)
+% zRT_imm = summarySE(z_RT_125, 
+%                       measurevar = "Immediate",
+%                       groupvars = c("PrimeCondition"))
+% zRT_del = summarySE(z_RT_125, 
+%                       measurevar = "zRTD",
+%                       groupvars = c("PrimeCondition"))
+% ## IMMEDIATE
+% library(ggplot2)
+% library(ggthemes)
+% ggplot(zRT_imm, aes(x = PrimeCondition, y = Immediate))+
+%  geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
+%   geom_errorbar(aes(ymin = Immediate - ci, ymax = Immediate + ci),
+%                 width=.05, position=position_dodge(.5)) +
+%   theme_few()+
+%   xlab("Prime Condition") + ylab("Mean RT") + 
+%   ggtitle("Immediate: Mean RT by Prime Condition")
+% 
+% #DELAYED
+% ggplot(zRT_del, aes(x = PrimeCondition, y = zRTD))+
+%  geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
+%   geom_errorbar(aes(ymin = zRTD - ci, ymax = zRTD + ci),
+%                 width=.05, position=position_dodge(.5)) +
+%   theme_few()+
+%   xlab("Prime Condition") + ylab("Mean zRT") + 
+%   ggtitle("Delayed: Mean zRT by Prime Condition")
+% 
+% 
+% ## PLOTTING INTERACTION
+% zRT_agg = group_by(zRT_long_125, Delay, PrimeCondition)%>%
+%   summarise_at(vars(zRT), mean)
+% library(Rmisc)
+% zRT_agg_rmisc = summarySE(zRT_long_125, 
+%                       measurevar = "zRT",
+%                       groupvars = c("Delay", "PrimeCondition"))
+% 
+% ggplot(zRT_agg_rmisc, aes(x = PrimeCondition, y = zRT, fill = Delay))+
+%  geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+%   geom_errorbar(aes(ymin = zRT - ci, ymax = zRT + ci),
+%                 width=.05, position=position_dodge(.5)) +
+%   theme_few()+
+%   xlab("Prime Condition") + ylab("Mean RT") + 
+%   ggtitle("Mean RT by Prime Condition and Delay")
+% 
+% @
+% 
+% 
+% \subsection*{500 ms}
+% 
+% \subsubsection*{Making the z-scores}
+% 
+% <<>>=
+% library(dplyr)
+% ## aggregate per subject all IVs and DVs
+% memory_mean_500 = group_by(memory500, Subject) %>%
+%   summarise_at(vars(RTImmediate, RTDelayed), mean)
+% colnames(memory_mean_500) = c("Subject", "meanRTimm", "meanRTdel")
+% 
+% memory_sd_500 = group_by(memory500, Subject) %>%
+%   summarise_at(vars(RTImmediate, RTDelayed), sd)
+% colnames(memory_sd_500) = c("Subject", "sdRTimm", "sdRTdel")
+% 
+% memory_agg_500 = merge(memory_mean_500, memory_sd_500, by = "Subject")
+% 
+% ## merge aggregate info with long data
+% memory500 = merge(memory500, memory_agg_500, by = "Subject", all.x = T)
+% 
+% ## person and grand-mean centered scores using original and aggregate
+% library(dplyr)
+% memory500 = memory500 %>% mutate(zRT_imm = (RTImmediate - meanRTimm)/sdRTimm,
+%                  zRT_del = (RTDelayed - meanRTdel)/sdRTdel)
+% 
+% ## checking: subject level means should be zero
+% 
+% sub_mem = group_by(memory500, Subject) %>%
+%   summarise_at(vars(zRT_imm, zRT_del), mean)
+% @
+% 
+% \subsubsection*{Immediate and Delayed ANOVAS}
+% 
+% <<>>=
+% 
+% z_RT_500 = group_by(memory500, Subject, PrimeCondition) %>%
+%   summarise_at(vars(zRT_imm, zRT_del), mean)
+% z_RT_500$PrimeCondition = as.factor(as.character(z_RT_500$PrimeCondition))
+% z_RT_500$Subject = as.factor(as.character(z_RT_500$Subject))
+% 
+% 
+% ## IMMEDIATE
+% 
+% z_immediate_aov_500 = aov(data = z_RT_500, 
+%                                      zRT_imm ~ PrimeCondition +
+%                                  Error(Subject/PrimeCondition))
+% summary(z_immediate_aov_500)
+% 
+% options(contrasts = c('contr.sum', 'contr.poly'))
+% library(lsmeans)
+% library(multcomp)
+% imm_lsm = lsmeans::lsmeans(z_immediate_aov_500, c("PrimeCondition"))
+% prime_effect = cld(imm_lsm, alpha = 0.05, 
+%                 adjust = "tukey", details = TRUE)
+% library(knitr)
+% kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
+% 
+% ## DELAYED
+% 
+% z_delayed_aov_500 = aov(data = z_RT_500, 
+%                                      zRT_del ~ PrimeCondition +
+%                                  Error(Subject/PrimeCondition))
+% summary(z_delayed_aov_500)
+% 
+% options(contrasts = c('contr.sum', 'contr.poly'))
+% library(lsmeans)
+% library(multcomp)
+% imm_lsm = lsmeans::lsmeans(z_delayed_aov_500, c("PrimeCondition"))
+% prime_effect = cld(imm_lsm, alpha = 0.05, 
+%                 adjust = "tukey", details = TRUE)
+% library(knitr)
+% kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
+% @
+% 
+% \subsubsection*{z-RT Conditional Analysis}
+% 
+% <<>>=
+% library(dplyr)
+% zRT_cond_500 = group_by(memory500, ImmediateAccuracy, PrimeCondition) %>%
+%   summarise_at(vars(zRT_del), mean)
+% 
+% zRT_cond_sub_500 = group_by(memory500, Subject, ImmediateAccuracy, 
+%                                  PrimeCondition) %>%
+%   summarise_at(vars(zRT_del), mean)
+% 
+% # only for 125 ms since S8 was old and low accuracy
+% #conditional_prime_sub = subset(conditional_prime_sub, conditional_prime_sub$Subject != "8")
+% 
+% ## With 28 subjects (up to S29), there are 9 missing cells at this point: we want to do 
+% ## something about this when we do an ANOVA
+% 
+% zRT_cond_sub_correct_500 = subset(zRT_cond_sub_500, 
+%                                  zRT_cond_sub_500$ImmediateAccuracy == "1")
+% 
+% ## see the mean RTs delayed for correct and incorrect targets: 
+% ## to fill missing cells
+% zRT_immacc_500 = group_by(memory500, ImmediateAccuracy, PrimeCondition)%>%
+%   summarise_at(vars(zRT_imm, zRT_del), mean)
+% 
+% ## for 48 ms
+% 
+% #zRT_conditional_prime_sub_correct [89,] = c("12", 1, "3_Semantic", -0.099613631 )
+% #zRT_conditional_prime_sub_correct [90,] = c("12", 1, "4_Unrelated", -0.115493136 )
+% 
+% #for 500 ms
+% #S36 and S42 have one row each missing
+% zRT_cond_sub_correct_500[99,] = c("36",1,"Neutral",-0.135651850 )
+% zRT_cond_sub_correct_500[100,] = c("42",1,"Phonological", -0.142223900 )
+% 
+% #only for 125 ms
+% #conditional_prime_sub_2 = subset(conditional_prime_sub_2, conditional_prime_sub_2$Subject != "21")
+% 
+% @
+% 
+% Merging immediate and delayed into one file:
+% <<>>=
+% ## now we have conditional delayed accuracies in cond_sub_correct
+% ## and we have immediate accuracies in prime_subject_acc
+% ## now we must combine the two files. 
+% 
+% colnames(zRT_cond_sub_correct_500) = c("Subject", "IA", "PrimeCondition", "Delayed")
+% colnames(z_RT_500) = c("Subject", "PrimeCondition", "Immediate", "zRTD")
+% 
+% zRT_final_combined_500 = merge(zRT_cond_sub_correct_500, 
+%                           z_RT_500, by = c("Subject", "PrimeCondition"))
+% #now we have immediate and delayed accuracy in wide format. need to convert to long format.
+% #first we remove uneccesary columns
+% zRT_final_combined_500 = zRT_final_combined_500[, -c(3,6)]
+% library(tidyr)
+% zRT_long_500 <- zRT_final_combined_500 %>%
+%   gather(Delay, zRT, Immediate, Delayed)
+%   
+% 
+% zRT_long_500 <- zRT_long_500[order(zRT_long_500$Subject),]
+% 
+% zRT_long_500$Delay = as.factor(as.character(zRT_long_500$Delay))
+% 
+% 
+% zRT_long_500$zRT = as.numeric(as.character(zRT_long_500$zRT))
+% 
+% zRT_final_aov = aov(data = zRT_long_500, zRT ~ Delay*PrimeCondition + 
+%                   Error(Subject/(Delay*PrimeCondition)))
+% summary(zRT_final_aov)
+% 
+% 
+% 
+% library(multcomp)
+% library(knitr)
+% options(contrasts = c('contr.sum', 'contr.poly'))
+% 
+% conditional_lsm = lsmeans::lsmeans(zRT_final_aov, c("Delay", "PrimeCondition"))
+% prime_effect = cld(conditional_lsm, alpha = 0.05, 
+%                 adjust = "tukey", details = TRUE, by = "Delay")
+% kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
+% 
+% @
+% 
+% \subsubsection*{Figures}
+% 
+% <<>>=
+% ## IMMEDIATE RECALL
+% library(Rmisc)
+% zRT_imm = summarySE(z_RT_500, 
+%                       measurevar = "Immediate",
+%                       groupvars = c("PrimeCondition"))
+% zRT_del = summarySE(z_RT_500, 
+%                       measurevar = "zRTD",
+%                       groupvars = c("PrimeCondition"))
+% ## IMMEDIATE
+% library(ggplot2)
+% library(ggthemes)
+% zRT_imm %>% mutate(PrimeCondition = factor(PrimeCondition, 
+%                                                  levels = unique(PrimeCondition),
+%                     labels = c("Identical", "Neutral", 
+%                                "Phonological", "Semantic", "Unrelated")))%>%
+%   ggplot(aes(x = PrimeCondition, y = Immediate))+
+%   geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
+%   geom_errorbar(aes(ymin = Immediate - ci, ymax = Immediate + ci),
+%                 width=.05, position=position_dodge(.5)) +
+%   theme_few()+
+%   xlab("Prime Condition") + ylab("Mean RT") + 
+%   ggtitle("Immediate: Mean RT by Prime Condition")
+% 
+% #DELAYED
+% zRT_del %>% mutate(PrimeCondition = factor(PrimeCondition, 
+%                                                  levels = unique(PrimeCondition),
+%                     labels = c("Identical", "Neutral", 
+%                                "Phonological", "Semantic", "Unrelated")))%>%
+%   ggplot(aes(x = PrimeCondition, y = zRTD))+
+%  geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
+%   geom_errorbar(aes(ymin = zRTD - ci, ymax = zRTD + ci),
+%                 width=.05, position=position_dodge(.5)) +
+%   theme_few()+
+%   xlab("Prime Condition") + ylab("Mean zRT") + 
+%   ggtitle("Delayed: Mean zRT by Prime Condition")
+% 
+% 
+% ## PLOTTING INTERACTION
+% zRT_agg = group_by(zRT_long_500, Delay, PrimeCondition)%>%
+%   summarise_at(vars(zRT), mean)
+% library(Rmisc)
+% zRT_agg_rmisc = summarySE(zRT_long_500, 
+%                       measurevar = "zRT",
+%                       groupvars = c("Delay", "PrimeCondition"))
+% 
+% zRT_agg_rmisc %>% mutate(PrimeCondition = factor(PrimeCondition, 
+%                                                  levels = unique(PrimeCondition),
+%                     labels = c("Identical", "Neutral", 
+%                                "Phonological", "Semantic", "Unrelated")))%>%
+%   ggplot( aes(x = PrimeCondition, y = zRT, fill = Delay))+
+%  geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+%   geom_errorbar(aes(ymin = zRT - ci, ymax = zRT + ci),
+%                 width=.05, position=position_dodge(.5)) +
+%   theme_few()+
+%   xlab("Prime Condition") + ylab("Mean RT") + 
+%   ggtitle("Mean RT by Prime Condition and Delay")
+% 
+% @
+% 
 
 
 \end{document}
