@@ -42,6 +42,19 @@ prime_subject_acc_48 = group_by(memory48, Subject, PrimeCondition) %>%
   summarise_at(vars(ImmediateAccuracy, DelayedAccuracy,RTImmediate, RTDelayed), mean)
 ```
 
+##125 ms
+```{r}
+library(dplyr)
+memory125 = memory125 %>% filter(!Subject %in% c("8", "88"))
+
+
+prime_acc_125 = group_by(memory125, PrimeCondition) %>%
+  summarise_at(vars(ImmediateAccuracy, DelayedAccuracy,RTImmediate, RTDelayed), mean)
+
+prime_subject_acc_125 = group_by(memory125, Subject, PrimeCondition) %>%
+  summarise_at(vars(ImmediateAccuracy, DelayedAccuracy,RTImmediate, RTDelayed), mean)
+```
+
 ##500 ms
 ```{r}
 library(dplyr)
@@ -115,6 +128,35 @@ delayed_aov_48 = aov(data = prime_subject_acc_48,
                       DelayedAccuracy ~ PrimeCondition +
                                  Error(Subject/PrimeCondition))
 summary(delayed_aov_48)
+```
+
+##125 ms
+
+###ANOVA for Immediate Recall
+```{r}
+prime_subject_acc_125$PrimeCondition = as.factor(prime_subject_acc_125$PrimeCondition)
+prime_subject_acc_125$Subject = as.factor(prime_subject_acc_125$Subject)
+immediate_aov_125 = aov(data = prime_subject_acc_125, 
+                        ImmediateAccuracy ~ PrimeCondition +
+                                 Error(Subject/PrimeCondition))
+summary(immediate_aov_125)
+
+options(contrasts = c('contr.sum', 'contr.poly'))
+library(lsmeans)
+library(multcomp)
+imm_lsm = lsmeans::lsmeans(immediate_aov_125, c("PrimeCondition"))
+prime_effect = cld(imm_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE)
+library(knitr)
+kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
+```
+
+###ANOVA for Delayed Recall
+```{r}
+delayed_aov_125 = aov(data = prime_subject_acc_125, 
+                      DelayedAccuracy ~ PrimeCondition +
+                                 Error(Subject/PrimeCondition))
+summary(delayed_aov_125)
 ```
 
 ##500 ms
@@ -364,7 +406,7 @@ kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
 
 library(Rmisc)
 immediateagg_rmisc_32 = summarySE(prime_subject_acc_32, 
-                      measurevar = "Immediate",
+                      measurevar = "ImmediateAccuracy",
                       groupvars = c("PrimeCondition"))
 
 ## IMMEDIATE
@@ -374,9 +416,9 @@ immediateagg_rmisc_32 %>% mutate(PrimeCondition = factor(PrimeCondition,
                                                  levels = unique(PrimeCondition),
                     labels = c("Identical", "Neutral", 
                                "Phonological", "Semantic", "Unrelated")))%>%
-ggplot(aes(x = PrimeCondition, y = Immediate))+
+ggplot(aes(x = PrimeCondition, y = ImmediateAccuracy))+
  geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
-  geom_errorbar(aes(ymin = Immediate - ci, ymax = Immediate + ci),
+  geom_errorbar(aes(ymin = ImmediateAccuracy - ci, ymax = ImmediateAccuracy + ci),
                 width=.05, position=position_dodge(.5)) +
   theme_few()+
   xlab("Prime Condition") + ylab("Mean Accuracy") + 
@@ -387,16 +429,16 @@ ggplot(aes(x = PrimeCondition, y = Immediate))+
 ```{r}
 library(Rmisc)
 delayedagg_rmisc_32 = summarySE(prime_subject_acc_32,
-                      measurevar = "DA",
+                      measurevar = "DelayedAccuracy",
                       groupvars = c("PrimeCondition"))
 #DELAYED
 delayedagg_rmisc_32 %>% mutate(PrimeCondition = factor(PrimeCondition,
                                                  levels = unique(PrimeCondition),
                     labels = c("Identical", "Neutral",
                                "Phonological", "Semantic", "Unrelated")))%>%
-ggplot(aes(x = PrimeCondition, y = DA))+
+ggplot(aes(x = PrimeCondition, y = DelayedAccuracy))+
  geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
-  geom_errorbar(aes(ymin = DA - ci, ymax = DA + ci),
+  geom_errorbar(aes(ymin = DelayedAccuracy - ci, ymax = DelayedAccuracy + ci),
                 width=.05, position=position_dodge(.5)) +
   theme_few()+
   xlab("Prime Condition") + ylab("Mean Accuracy") +
@@ -431,15 +473,15 @@ agg_rmisc_32 %>% mutate(PrimeCondition = factor(PrimeCondition,
 ```{r}
 library(Rmisc)
 immediateagg_rmisc_48 = summarySE(prime_subject_acc_48,
-                      measurevar = "Immediate",
+                      measurevar = "ImmediateAccuracy",
                       groupvars = c("PrimeCondition"))
 
 ## IMMEDIATE
 library(ggplot2)
 library(ggthemes)
-ggplot(immediateagg_rmisc_48, aes(x = PrimeCondition, y = Immediate))+
+ggplot(immediateagg_rmisc_48, aes(x = PrimeCondition, y = ImmediateAccuracy))+
  geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
-  geom_errorbar(aes(ymin = Immediate - ci, ymax = Immediate + ci),
+  geom_errorbar(aes(ymin = ImmediateAccuracy - ci, ymax = ImmediateAccuracy + ci),
                 width=.05, position=position_dodge(.5)) +
   theme_few()+
   xlab("Prime Condition") + ylab("Mean Accuracy") +
@@ -451,12 +493,12 @@ ggplot(immediateagg_rmisc_48, aes(x = PrimeCondition, y = Immediate))+
 ```{r}
 library(Rmisc)
 delayedagg_rmisc_48 = summarySE(prime_subject_acc_48,
-                      measurevar = "DA",
+                      measurevar = "DelayedAccuracy",
                       groupvars = c("PrimeCondition"))
 #DELAYED
-ggplot(delayedagg_rmisc_48, aes(x = PrimeCondition, y = DA))+
+ggplot(delayedagg_rmisc_48, aes(x = PrimeCondition, y = DelayedAccuracy))+
  geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
-  geom_errorbar(aes(ymin = DA - ci, ymax = DA + ci),
+  geom_errorbar(aes(ymin = DelayedAccuracy - ci, ymax = DelayedAccuracy + ci),
                 width=.05, position=position_dodge(.5)) +
   theme_few()+
   xlab("Prime Condition") + ylab("Mean Accuracy") +
@@ -487,21 +529,59 @@ agg_rmisc_48 %>% mutate(PrimeCondition = factor(PrimeCondition,
   ggtitle("Mean Accuracy by Prime Condition and Delay")
 ```
 
+## 125ms
+### Immediate Recall
+```{r}
+library(Rmisc)
+immediateagg_rmisc_125 = summarySE(prime_subject_acc_125,
+                      measurevar = "ImmediateAccuracy",
+                      groupvars = c("PrimeCondition"))
+
+## IMMEDIATE
+library(ggplot2)
+library(ggthemes)
+ggplot(immediateagg_rmisc_125, aes(x = PrimeCondition, y = ImmediateAccuracy))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
+  geom_errorbar(aes(ymin = ImmediateAccuracy - ci, ymax = ImmediateAccuracy + ci),
+                width=.05, position=position_dodge(.5)) +
+  theme_few()+
+  xlab("Prime Condition") + ylab("Mean Accuracy") +
+  ggtitle("Immediate: Mean Accuracy by Prime Condition")
+
+```
+
+### Delayed Recall
+```{r}
+library(Rmisc)
+delayedagg_rmisc_125 = summarySE(prime_subject_acc_125,
+                      measurevar = "DelayedAccuracy",
+                      groupvars = c("PrimeCondition"))
+#DELAYED
+ggplot(delayedagg_rmisc_125, aes(x = PrimeCondition, y = DelayedAccuracy))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
+  geom_errorbar(aes(ymin = DelayedAccuracy - ci, ymax = DelayedAccuracy + ci),
+                width=.05, position=position_dodge(.5)) +
+  theme_few()+
+  xlab("Prime Condition") + ylab("Mean Accuracy") +
+  ggtitle("Delayed: Mean Accuracy by Prime Condition")
+```
+
+
 ## 500 ms
 
 ### Immediate Recall
 ```{r}
 library(Rmisc)
 immediateagg_rmisc_500 = summarySE(prime_subject_acc_500, 
-                      measurevar = "Immediate",
+                      measurevar = "ImmediateAccuracy",
                       groupvars = c("PrimeCondition"))
 
 ## IMMEDIATE
 library(ggplot2)
 library(ggthemes)
-ggplot(immediateagg_rmisc_500, aes(x = PrimeCondition, y = Immediate))+
+ggplot(immediateagg_rmisc_500, aes(x = PrimeCondition, y = ImmediateAccuracy))+
  geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
-  geom_errorbar(aes(ymin = Immediate - ci, ymax = Immediate + ci),
+  geom_errorbar(aes(ymin = ImmediateAccuracy - ci, ymax = ImmediateAccuracy + ci),
                 width=.05, position=position_dodge(.5)) +
   theme_few()+
   xlab("Prime Condition") + ylab("Mean Accuracy") + 
@@ -513,12 +593,12 @@ ggplot(immediateagg_rmisc_500, aes(x = PrimeCondition, y = Immediate))+
 ```{r}
 library(Rmisc)
 delayedagg_rmisc_500 = summarySE(prime_subject_acc_500, 
-                      measurevar = "DA",
+                      measurevar = "DelayedAccuracy",
                       groupvars = c("PrimeCondition"))
 #DELAYED
-ggplot(delayedagg_rmisc_500, aes(x = PrimeCondition, y = DA))+
+ggplot(delayedagg_rmisc_500, aes(x = PrimeCondition, y = DelayedAccuracy))+
  geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
-  geom_errorbar(aes(ymin = DA - ci, ymax = DA + ci),
+  geom_errorbar(aes(ymin = DelayedAccuracy - ci, ymax = DelayedAccuracy + ci),
                 width=.05, position=position_dodge(.5)) +
   theme_few()+
   xlab("Prime Condition") + ylab("Mean Accuracy") + 
@@ -556,15 +636,16 @@ agg_rmisc_500 %>% mutate(PrimeCondition = factor(PrimeCondition,
 ### First Trim for Error Trials and At 250 ms and 6000 ms
 
 ```{r}
-memory32_trim = memory32 %>% filter(ImmediateAccuracy == '1') 
-## removes 48 % trials
+memory32_imm = memory32 %>% filter(ImmediateAccuracy == '1') 
+memory32_del = memory32 %>% filter(DelayedAccuracy == '1') 
+## removes 48.3 % imm and 48.9 % del trials
 
 ## now removing  <250 and >6000 trials
 
-memory32_imm = memory32_trim %>% filter(RTImmediate >= 250 & RTImmediate <=6000)
-## removes 2% trials
-memory32_del = memory32_trim %>% filter(RTDelayed >=250 & RTImmediate <= 6000) 
-## removes 2.5% trials
+memory32_imm = memory32_imm %>% filter(RTImmediate >= 250 & RTImmediate <=6000)
+## removes 2.3% trials
+memory32_del = memory32_del %>% filter(RTDelayed >=250 & RTDelayed <= 6000) 
+## removes 0.7% trials
 ```
 
 
@@ -632,9 +713,9 @@ For delayed RTs
 
 ```{r}
 memory32_imm_trim = memory32_imm %>% filter(zRT_imm >= -3 & zRT_imm <= 3)
-## removes 1.6% trials
+## removes 1.4% trials
 memory32_del_trim = memory32_del %>% filter(zRT_del >= -3 & zRT_del <= 3)
-## removes 2.9 % trials 
+## removes 1.8 % trials 
 ```
 
 For immediate RTs
@@ -721,7 +802,7 @@ For delayed RTs
 
 z_RT_32_imm [115,] = c("13", "Semantic", 0.059984019, 1706.724 )
 
-z_RT_32_del [115,] = c("13", "Semantic", -0.04081291, 1368.575)
+z_RT_32_del [115,] = c("13", "Semantic", 0.01559873, 1378.698)
 
  z_RT_32_imm$zRT_imm_final = as.numeric(as.character(z_RT_32_imm$zRT_imm_final))
  z_RT_32_imm$RTImmediate = as.numeric(as.character(z_RT_32_imm$RTImmediate))
@@ -733,7 +814,7 @@ z_RT_32_del [115,] = c("13", "Semantic", -0.04081291, 1368.575)
   ## IMMEDIATE
  
  z_immediate_aov_32 = aov(data = z_RT_32_imm, 
-                                      zRT_imm_final ~ PrimeCondition +
+                                      RTImmediate ~ PrimeCondition +
                                   Error(Subject/PrimeCondition))
  summary(z_immediate_aov_32)
  
@@ -749,7 +830,7 @@ z_RT_32_del [115,] = c("13", "Semantic", -0.04081291, 1368.575)
  ## DELAYED
  
  z_delayed_aov_32 = aov(data = z_RT_32_del, 
-                                      zRT_del_final ~ PrimeCondition +
+                                      RTDelayed ~ PrimeCondition +
                                   Error(Subject/PrimeCondition))
  summary(z_delayed_aov_32)
  
@@ -974,15 +1055,17 @@ library(dplyr)
 ### First Trim for Error Trials and At 250 ms and 6000 ms
 
 ```{r}
-memory48_trim = memory48 %>% filter(ImmediateAccuracy == '1') 
-## removes 36 % trials
+library(dplyr)
+memory48_imm = memory48 %>% filter(ImmediateAccuracy == '1') 
+memory48_del = memory48 %>% filter(DelayedAccuracy == '1') 
+## removes 48.3 % imm and 48.9 % del trials
 
 ## now removing  <250 and >6000 trials
 
-memory48_imm = memory48_trim %>% filter(RTImmediate >= 250 & RTImmediate <=6000)
-## removes 0.8% trials
-memory48_del = memory48_trim %>% filter(RTDelayed >=250 & RTImmediate <= 6000) 
-## removes 1.1% trials
+memory48_imm = memory48_imm %>% filter(RTImmediate >= 250 & RTImmediate <=6000)
+## removes 2.3% trials
+memory48_del = memory48_del %>% filter(RTDelayed >=250 & RTDelayed <= 6000) 
+## removes 0.7% trials
 ```
 
 
@@ -1129,7 +1212,7 @@ For delayed RTs
  z_RT_48_del$PrimeCondition = as.factor(as.character(z_RT_48_del$PrimeCondition))
  z_RT_48_del$Subject = as.factor(as.character(z_RT_48_del$Subject))
  
- ## WE have 2 missing cells in both zRTimm and zRTdel for S12
+ ## WE have 2 missing cells in zRTimm and 3 missing in zRTdel for S12
  ## So we find mean of the condition and put it there
  
  zRT_immacc_48 = group_by(memory48_imm_trim, PrimeCondition)%>%
@@ -1140,8 +1223,9 @@ For delayed RTs
 z_RT_48_imm [89,] = c("12", "Semantic", 0.17544035, 1557.688 )
 z_RT_48_imm [90,] = c("12", "UnSemantic", 0.11884351, 1551.179 )
  
-z_RT_48_del [89,] = c("12", "Semantic", 0.07134476, 1365.250)
-z_RT_48_del [90,] = c("12", "UnSemantic", -0.01453853, 1331.578)
+z_RT_48_del [88,] = c("12", "Semantic", 0.15767884, 1373.805)
+z_RT_48_del [89,] = c("12", "UnSemantic", -0.01120962, 1295.871)
+z_RT_48_del [90,] = c("12", "Neutral", -0.23194050, 1155.301)
  
  z_RT_48_imm$zRT_imm_final = as.numeric(as.character(z_RT_48_imm$zRT_imm_final))
  z_RT_48_imm$RTImmediate = as.numeric(as.character(z_RT_48_imm$RTImmediate))
@@ -1365,15 +1449,16 @@ conditional_lsm = lsmeans::lsmeans(zRT_final_aov, c("Delay", "PrimeCondition"))
 
 ## filtering out Subject 8 and Subject 88 first
 memory125 = memory125 %>% filter(!Subject %in% c("8", "88"))
-memory125_trim = memory125 %>% filter(ImmediateAccuracy == '1') 
-## removes 36 % trials
+memory125_imm = memory125 %>% filter(ImmediateAccuracy == '1') 
+memory125_del = memory125 %>% filter(DelayedAccuracy == '1') 
+## removes 48.3 % imm and 48.9 % del trials
 
 ## now removing  <250 and >6000 trials
 
-memory125_imm = memory125_trim %>% filter(RTImmediate >= 250 & RTImmediate <=6000)
-## removes 0.8% trials
-memory125_del = memory125_trim %>% filter(RTDelayed >=250 & RTImmediate <= 6000) 
-## removes 1.1% trials
+memory125_imm = memory125_imm %>% filter(RTImmediate >= 250 & RTImmediate <=6000)
+## removes 2.3% trials
+memory125_del = memory125_del %>% filter(RTDelayed >=250 & RTDelayed <= 6000) 
+## removes 0.7% trials
 ```
 
 
@@ -1532,9 +1617,8 @@ z_RT_125_imm [128,] = c("21", "Semantic", -0.09959580, 1471.750 )
 z_RT_125_imm [129,] = c("21", "UnSemantic", 0.18262175, 1691.836 )
 z_RT_125_imm [130,] = c("21", "Neutral", 0.07700379, 1550.566 )
  
-z_RT_125_del [128,] = c("21", "Semantic", -0.006282993, 1544.463 )
-z_RT_125_del [129,] = c("21", "UnSemantic", 0.065456727, 1422.580 )
-z_RT_125_del [130,] = c("21", "Neutral", -0.102611092, 1379.160 )
+z_RT_125_del [129,] = c("21", "Semantic", -0.004561153, 1349.887 )
+z_RT_125_del [130,] = c("21", "Neutral", 0.009215644, 1405.369 )
   
  z_RT_125_imm$zRT_imm_final = as.numeric(as.character(z_RT_125_imm$zRT_imm_final))
  z_RT_125_imm$RTImmediate = as.numeric(as.character(z_RT_125_imm$RTImmediate))
@@ -1562,7 +1646,7 @@ z_RT_125_del [130,] = c("21", "Neutral", -0.102611092, 1379.160 )
  ## DELAYED
  
  z_delayed_aov_125 = aov(data = z_RT_125_del, 
-                                      zRT_del_final ~ PrimeCondition +
+                                      RTDelayed ~ PrimeCondition +
                                   Error(Subject/PrimeCondition))
  summary(z_delayed_aov_125)
  
@@ -1664,15 +1748,16 @@ kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
 ### First Trim for Error Trials and At 250 ms and 6000 ms
 
 ```{r}
-memory500_trim = memory500 %>% filter(ImmediateAccuracy == '1') 
-## removes 40 % trials
+memory500_imm = memory500 %>% filter(ImmediateAccuracy == '1') 
+memory500_del = memory500 %>% filter(DelayedAccuracy == '1') 
+## removes 48.3 % imm and 48.9 % del trials
 
 ## now removing  <250 and >6000 trials
 
-memory500_imm = memory500_trim %>% filter(RTImmediate >= 250 & RTImmediate <=6000)
-## removes 0.8% trials
-memory500_del = memory500_trim %>% filter(RTDelayed >=250 & RTImmediate <= 6000) 
-## removes 1.2% trials
+memory500_imm = memory500_imm %>% filter(RTImmediate >= 250 & RTImmediate <=6000)
+## removes 2.3% trials
+memory500_del = memory500_del %>% filter(RTDelayed >=250 & RTDelayed <= 6000) 
+## removes 0.7% trials
 ```
 
 
@@ -1819,7 +1904,7 @@ For delayed RTs
  z_RT_500_del$PrimeCondition = as.factor(as.character(z_RT_500_del$PrimeCondition))
  z_RT_500_del$Subject = as.factor(as.character(z_RT_500_del$Subject))
  
- ## WE have 2 missing cells in both zRTimm and zRTdel for S12
+ ## WE have 2 missing cells in zRTimm and 3 missing in zRTdel for S12
  ## So we find mean of the condition and put it there
  
  zRT_immacc_500 = group_by(memory500_imm_trim, PrimeCondition)%>%
@@ -1830,8 +1915,9 @@ For delayed RTs
 z_RT_500_imm  [99,] = c("36", "Neutral",0.06884688, 1497.188 )
 z_RT_500_imm [100,] = c("42","Phonological", -0.07480176,1406.984 )
  
-z_RT_500_del [99,] = c("36","Neutral",0.05098498, 1424.079 )
-z_RT_500_del [100,] = c("42","Phonological", -0.06388878,1341.323  )
+z_RT_500_del [98,] = c("36","Neutral",-0.0364225, 1270.883 )
+z_RT_500_del [99,] = c("33","Phonological", -0.0108944,1241.624  )
+z_RT_500_del [100,] = c("33","Semantic", 0.1314259, 1403.101  )
  
  z_RT_500_imm$zRT_imm_final = as.numeric(as.character(z_RT_500_imm$zRT_imm_final))
  z_RT_500_imm$RTImmediate = as.numeric(as.character(z_RT_500_imm$RTImmediate))
@@ -1859,7 +1945,7 @@ z_RT_500_del [100,] = c("42","Phonological", -0.06388878,1341.323  )
  ## DELAYED
  
  z_delayed_aov_500 = aov(data = z_RT_500_del, 
-                                      zRT_del_final ~ PrimeCondition +
+                                      RTDelayed ~ PrimeCondition +
                                   Error(Subject/PrimeCondition))
  summary(z_delayed_aov_500)
  
