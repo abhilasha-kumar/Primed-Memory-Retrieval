@@ -181,6 +181,30 @@ library(knitr)
 kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
 ```
 
+### Immediate x Delayed Interaction
+
+```{r}
+combined_48new = tidyr::gather(prime_subject_acc_48_new, 
+                         key = Delay, value = Accuracy,
+       ImmediateAccuracy, DelayedAccuracy)
+combined_48new = combined_48new[order(combined_48new$Subject),]
+
+combined_aov_48_new = aov(data = combined_48new, 
+                      Accuracy ~ Delay*PrimeCondition +
+                                 Error(Subject/(Delay*PrimeCondition)))
+summary(combined_aov_48_new)
+
+options(contrasts = c('contr.sum', 'contr.poly'))
+library(lsmeans)
+library(multcomp)
+imm_lsm = lsmeans::lsmeans(combined_aov_48_new, c("Delay", "PrimeCondition"))
+prime_effect = cld(imm_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE, by = "PrimeCondition")
+library(knitr)
+kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
+```
+
+
 ##125 ms
 
 ###ANOVA for Immediate Recall
