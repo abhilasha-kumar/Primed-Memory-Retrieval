@@ -422,8 +422,8 @@ cond_sub_correct_48_new = subset(cond_sub_48_new,
 
 #for 48 NEW ms, S4 and S13 have 1 row each missing
 
-cond_sub_correct_48_new[95,] = c("4",1,"Unrelated", 0 )
-cond_sub_correct_48_new[96,] = c("13",1,"Unrelated", 0 )
+cond_sub_correct_48_new[127,] = c("4",1,"Unrelated", 0 )
+cond_sub_correct_48_new[128,] = c("13",1,"Unrelated", 0 )
 
 ## We can do a simple ANOVA at this point
 
@@ -2531,7 +2531,7 @@ For delayed RTs
  z_RT_48new_del$PrimeCondition = as.factor(as.character(z_RT_48new_del$PrimeCondition))
  z_RT_48new_del$Subject = as.factor(as.character(z_RT_48new_del$Subject))
  
- ## WE have 1 missing cells in both zRTimm and zRTdel for S12
+ # For missing data
  ## So we find mean of the condition and put it there
  
  zRT_immacc_48new = group_by(memory48new_imm_trim, PrimeCondition)%>%
@@ -2541,21 +2541,21 @@ For delayed RTs
  
  ## Subject 4 and 13 have 1 missing cell in Unrelated each in Immediate
 
-z_RT_48new_imm [95,] = c("4", "Unrelated", -0.0175, 1583 )
-z_RT_48new_imm [96,] = c("13", "Unrelated", -0.0175, 1583 )
+z_RT_48new_imm [127,] = c("4", "Unrelated", -0.00402, 1544 )
+z_RT_48new_imm [128,] = c("13", "Unrelated", -0.00402, 1544 )
 
 
 ## 9 missing cells in Delayed
 ## S11 P, S13 P, S13 U, S14 Sem, S4 U, S9 Sem
-z_RT_48new_del [88,] = c("13", "Phonological", -0.0483, 1449)
-z_RT_48new_del [89,] = c("13", "Unrelated", 0.0243, 1577)
-z_RT_48new_del [90,] = c("11", "Phonological", -0.0483, 1449)
-z_RT_48new_del [91,] = c("14", "Semantic", 0.0668, 1534)
-z_RT_48new_del [92,] = c("4", "Unrelated", 0.0243, 1577)
-z_RT_48new_del [93,] = c("9", "Semantic", 0.0668, 1534)
-z_RT_48new_del [94,] = c("21", "Unrelated", 0.0243, 1577)
-z_RT_48new_del [95,] = c("24", "Identical", -0.0305, 1461)
-z_RT_48new_del [96,] = c("24", "Unrelated", 0.0243, 1577)
+z_RT_48new_del [120,] = c("13", "Phonological", -0.0466, 1403)
+z_RT_48new_del [121,] = c("13", "Unrelated", 0.0653, 1516)
+z_RT_48new_del [122,] = c("11", "Phonological", -0.0466, 1403)
+z_RT_48new_del [123,] = c("14", "Semantic", -0.00625, 1452)
+z_RT_48new_del [124,] = c("4", "Unrelated", 0.0653, 1516)
+z_RT_48new_del [125,] = c("9", "Semantic", -0.00625, 1452)
+z_RT_48new_del [126,] = c("21", "Unrelated", 0.0653, 1516)
+z_RT_48new_del [127,] = c("24", "Identical", -0.0152, 1439)
+z_RT_48new_del [128,] = c("24", "Unrelated", 0.0653, 1516)
 
 
 
@@ -2568,11 +2568,7 @@ z_RT_48new_del [96,] = c("24", "Unrelated", 0.0243, 1577)
  
   ## IMMEDIATE
  
- z_immediate_aov_48new = aov(data = z_RT_48new_imm, 
-                                      RTImmediate ~ PrimeCondition +
-                                  Error(Subject/PrimeCondition))
- summary(z_immediate_aov_48new)
- 
+ 5
  options(contrasts = c('contr.sum', 'contr.poly'))
  library(lsmeans)
  library(multcomp)
@@ -2585,7 +2581,7 @@ z_RT_48new_del [96,] = c("24", "Unrelated", 0.0243, 1577)
  ## DELAYED
  
  z_delayed_aov_48new = aov(data = z_RT_48new_del, 
-                                      RTDelayed ~ PrimeCondition +
+                                      zRT_del_final ~ PrimeCondition +
                                   Error(Subject/PrimeCondition))
  summary(z_delayed_aov_48new)
  
