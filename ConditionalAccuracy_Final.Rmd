@@ -37,10 +37,17 @@ prime_subject_acc_32 = group_by(memory32, Subject, PrimeCondition) %>%
 ```{r}
 library(dplyr)
 prime_acc_48 = group_by(memory48, PrimeCondition) %>%
-  summarise_at(vars(ImmediateAccuracy, DelayedAccuracy,RTImmediate, RTDelayed), mean)
+  summarise_at(vars(ImmediateAccuracy, DelayedAccuracy,
+                    RTImmediate, RTDelayed,
+                    PrimeIntrusionImmediate, PrimeIntrusionDelayed), mean)
 
 prime_subject_acc_48 = group_by(memory48, Subject, PrimeCondition) %>%
-  summarise_at(vars(ImmediateAccuracy, DelayedAccuracy,RTImmediate, RTDelayed), mean)
+  summarise_at(vars(ImmediateAccuracy, DelayedAccuracy,
+                    PrimeIntrusionImmediate, PrimeIntrusionDelayed), mean)
+
+prime_ident_48 = prime_subject_acc_48 %>%
+    filter(PrimeCondition == "Identical")
+
 ```
 
 ##125 ms
@@ -71,10 +78,14 @@ prime_subject_acc_500 = group_by(memory500, Subject, PrimeCondition) %>%
 ```{r}
 library(dplyr)
 prime_acc_48_new = group_by(memory48new, PrimeCondition) %>%
-  summarise_at(vars(ImmediateAccuracy, DelayedAccuracy), mean)
-
+  summarise_at(vars(ImmediateAccuracy, DelayedAccuracy,
+                    PrimeIntrusionImmediate, PrimeIntrusionDelayed), mean)
 prime_subject_acc_48_new = group_by(memory48new, Subject, PrimeCondition) %>%
-  summarise_at(vars(ImmediateAccuracy, DelayedAccuracy), mean)
+  summarise_at(vars(ImmediateAccuracy, DelayedAccuracy,
+                    PrimeIntrusionImmediate, PrimeIntrusionDelayed), mean)
+
+prime_ident_48_new = prime_subject_acc_48_new %>%
+    filter(PrimeCondition == "Identical")
 ```
 
 #ANOVAS
@@ -161,6 +172,21 @@ prime_effect = cld(imm_lsm, alpha = 0.05,
                 adjust = "tukey", details = TRUE)
 library(knitr)
 kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
+
+## specific t tests
+
+target_p = prime_subject_acc_48_new %>% filter(PrimeCondition == "Phonological")
+target_r = prime_subject_acc_48_new %>% filter(PrimeCondition == "Semantic")
+target_i = prime_subject_acc_48_new %>% filter(PrimeCondition == "Identical")
+target_u = prime_subject_acc_48_new %>% filter(PrimeCondition == "Unrelated")
+
+t.test(target_i$ImmediateAccuracy, target_r$ImmediateAccuracy, paired = TRUE)
+t.test(target_i$ImmediateAccuracy, target_p$ImmediateAccuracy, paired = TRUE)
+t.test(target_i$ImmediateAccuracy, target_u$ImmediateAccuracy, paired = TRUE)
+
+t.test(target_p$ImmediateAccuracy, target_r$ImmediateAccuracy, paired = TRUE)
+t.test(target_p$ImmediateAccuracy, target_u$ImmediateAccuracy, paired = TRUE)
+t.test(target_r$ImmediateAccuracy, target_u$ImmediateAccuracy, paired = TRUE)
 ```
 
 
@@ -426,7 +452,9 @@ cond_sub_correct_48_new[127,] = c("4",1,"Unrelated", 0 )
 cond_sub_correct_48_new[128,] = c("13",1,"Unrelated", 0 )
 
 ## We can do a simple ANOVA at this point
-
+cond_sub_correct_48_new$Subject = as.factor(cond_sub_correct_48_new$Subject)
+cond_sub_correct_48_new$DelayedAccuracy = as.numeric(cond_sub_correct_48_new$DelayedAccuracy)
+cond_sub_correct_48_new = as.data.frame(cond_sub_correct_48_new)
 cond_aov_48_new = aov(data = cond_sub_correct_48_new, 
                       DelayedAccuracy ~ PrimeCondition + 
                   Error(Subject/(PrimeCondition)))
@@ -440,6 +468,20 @@ conditional_lsm = lsmeans::lsmeans(cond_aov_48_new, c("PrimeCondition"))
 prime_effect = cld(conditional_lsm, alpha = 0.05, 
                 adjust = "tukey", details = TRUE)
 kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
+
+
+target_p = cond_sub_correct_48_new %>% filter(PrimeCondition == "Phonological")
+target_r = cond_sub_correct_48_new %>% filter(PrimeCondition == "Semantic")
+target_i = cond_sub_correct_48_new %>% filter(PrimeCondition == "Identical")
+target_u = cond_sub_correct_48_new %>% filter(PrimeCondition == "Unrelated")
+
+t.test(target_i$DelayedAccuracy, target_r$DelayedAccuracy, paired = TRUE)
+t.test(target_i$DelayedAccuracy, target_p$DelayedAccuracy, paired = TRUE)
+t.test(target_i$DelayedAccuracy, target_u$DelayedAccuracy, paired = TRUE)
+
+t.test(target_p$DelayedAccuracy, target_r$DelayedAccuracy, paired = TRUE)
+t.test(target_p$DelayedAccuracy, target_u$DelayedAccuracy, paired = TRUE)
+t.test(target_r$DelayedAccuracy, target_u$DelayedAccuracy, paired = TRUE)
 ```
 
 ```{r}
@@ -494,6 +536,44 @@ cond_sub_correct_500 = subset(cond_sub_500, cond_sub_500$ImmediateAccuracy == "1
 
 cond_sub_correct_500[99,] = c("36",1,"Neutral", 0 )
 cond_sub_correct_500[100,] = c("42",1,"Phonological", 0 )
+
+## We can do a simple ANOVA at this point
+cond_sub_correct_500$Subject = as.factor(cond_sub_correct_500$Subject)
+cond_sub_correct_500$DelayedAccuracy = as.numeric(cond_sub_correct_500$DelayedAccuracy)
+cond_sub_correct_500 = as.data.frame(cond_sub_correct_500)
+cond_sub_correct_500_aov = aov(data = cond_sub_correct_500, 
+                      DelayedAccuracy ~ PrimeCondition + 
+                  Error(Subject/(PrimeCondition)))
+summary(cond_sub_correct_500_aov)
+
+library(multcomp)
+library(knitr)
+options(contrasts = c('contr.sum', 'contr.poly'))
+
+conditional_lsm = lsmeans::lsmeans(cond_sub_correct_500_aov, c("PrimeCondition"))
+prime_effect = cld(conditional_lsm, alpha = 0.05, 
+                adjust = "tukey", details = TRUE)
+kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
+
+
+target_p = cond_sub_correct_500 %>% filter(PrimeCondition == "Phonological")
+target_r = cond_sub_correct_500 %>% filter(PrimeCondition == "Semantic")
+target_i = cond_sub_correct_500 %>% filter(PrimeCondition == "Identical")
+target_u = cond_sub_correct_500 %>% filter(PrimeCondition == "UnSemantic")
+target_n = cond_sub_correct_500 %>% filter(PrimeCondition == "Neutral")
+
+t.test(target_i$DelayedAccuracy, target_r$DelayedAccuracy, paired = TRUE)
+t.test(target_i$DelayedAccuracy, target_p$DelayedAccuracy, paired = TRUE)
+t.test(target_i$DelayedAccuracy, target_u$DelayedAccuracy, paired = TRUE)
+t.test(target_i$DelayedAccuracy, target_n$DelayedAccuracy, paired = TRUE)
+
+t.test(target_r$DelayedAccuracy, target_p$DelayedAccuracy, paired = TRUE)
+t.test(target_r$DelayedAccuracy, target_u$DelayedAccuracy, paired = TRUE)
+t.test(target_r$DelayedAccuracy, target_n$DelayedAccuracy, paired = TRUE)
+```
+
+
+```{r}
 
 ##  Merging immediate and delayed into one file:
 
@@ -2675,6 +2755,98 @@ kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
    xlab("Prime Condition") + ylab("Mean RT") + 
    ggtitle("Delayed: Mean RT by Prime Condition")
 ```
+
+# Prime Intrusion Rates
+
+## Immediate
+
+```{r}
+intrusion_48 = Rmisc::summarySE(prime_subject_acc_48, 
+                      measurevar = "PrimeIntrusionImmediate",
+                      groupvars = c("PrimeCondition"))
+intrusion_48_new = Rmisc::summarySE(prime_subject_acc_48_new, 
+                      measurevar = "PrimeIntrusionImmediate",
+                      groupvars = c("PrimeCondition"))
+
+library(ggplot2)
+library(ggthemes)
+intrusion_48 %>% 
+  mutate(PrimeCondition = factor(PrimeCondition, 
+                        levels = unique(PrimeCondition),
+                    labels = c("Identical", "Neutral", 
+                               "Phonological", "Semantic", "Unrelated")))%>%
+ggplot(aes(x = PrimeCondition, y = PrimeIntrusionImmediate))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
+  geom_errorbar(aes(ymin = PrimeIntrusionImmediate - ci, ymax = PrimeIntrusionImmediate + ci),
+                width=.05, position=position_dodge(.5)) +
+  theme_few()+
+  xlab("Prime Condition") + ylab("Mean Intrusion Rate") + 
+  ggtitle("48 ms: Immediate: Mean Intrusion by Prime Condition")
+
+intrusion_48_new %>% 
+  mutate(PrimeCondition = factor(PrimeCondition, 
+                        levels = unique(PrimeCondition),
+                    labels = c("Identical", 
+                               "Phonological", "Semantic", "Unrelated")))%>%
+ggplot(aes(x = PrimeCondition, y = PrimeIntrusionImmediate))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
+  geom_errorbar(aes(ymin = PrimeIntrusionImmediate - ci, ymax = PrimeIntrusionImmediate + ci),
+                width=.05, position=position_dodge(.5)) +
+  theme_few()+
+  xlab("Prime Condition") + ylab("Mean Intrusion Rate") + 
+  ggtitle("48 ms NEW: Immediate: Mean Intrusion by Prime Condition")
+
+
+```
+
+## Delayed
+
+```{r}
+intrusion_48 = Rmisc::summarySE(prime_subject_acc_48, 
+                      measurevar = "PrimeIntrusionDelayed",
+                      groupvars = c("PrimeCondition"))
+intrusion_48_new = Rmisc::summarySE(prime_subject_acc_48_new, 
+                      measurevar = "PrimeIntrusionDelayed",
+                      groupvars = c("PrimeCondition"))
+
+library(ggplot2)
+library(ggthemes)
+intrusion_48 %>% 
+  mutate(PrimeCondition = factor(PrimeCondition, 
+                        levels = unique(PrimeCondition),
+                    labels = c("Identical", "Neutral", 
+                               "Phonological", "Semantic", "Unrelated")))%>%
+ggplot(aes(x = PrimeCondition, y = PrimeIntrusionDelayed))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
+  geom_errorbar(aes(ymin = PrimeIntrusionDelayed - ci, ymax = PrimeIntrusionDelayed + ci),
+                width=.05, position=position_dodge(.5)) +
+  theme_few()+
+  xlab("Prime Condition") + ylab("Mean Intrusion Rate") + 
+  ggtitle("48 ms: Delayed: Mean Intrusion by Prime Condition")
+
+intrusion_48_new %>% 
+  mutate(PrimeCondition = factor(PrimeCondition, 
+                        levels = unique(PrimeCondition),
+                    labels = c("Identical", 
+                               "Phonological", "Semantic", "Unrelated")))%>%
+ggplot(aes(x = PrimeCondition, y = PrimeIntrusionDelayed))+
+ geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
+  geom_errorbar(aes(ymin = PrimeIntrusionDelayed - ci, ymax = PrimeIntrusionDelayed + ci),
+                width=.05, position=position_dodge(.5)) +
+  theme_few()+
+  xlab("Prime Condition") + ylab("Mean Intrusion Rate") + 
+  ggtitle("48 ms NEW: Delayed: Mean Intrusion by Prime Condition")
+```
+
+# Accuracy in Identical Condition
+
+```{r}
+hist(prime_ident_48$ImmediateAccuracy, main = "48 ms 20-min delay")
+hist(prime_ident_48_new$ImmediateAccuracy, main = "48 ms 2-day delay")
+
+```
+
+
 
 
 
