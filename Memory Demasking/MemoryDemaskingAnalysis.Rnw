@@ -1,0 +1,363 @@
+\documentclass[letterpaper]{article}
+\usepackage[a4paper, total={7in, 8in}]{geometry}
+
+\usepackage{xcolor}
+\usepackage{Sweavel}
+\usepackage{graphicx}
+\def\Sweavesize{\normalsize}
+% Uncomment some of the following to use some alternatives:
+\def\Rcolor{\color{black}}
+\definecolor{mypink2}{RGB}{219, 48, 122}
+\def\Routcolor{\color{mypink2}}
+\def\Rcommentcolor{\color{red}}
+\definecolor{babyblueeyes}{rgb}{0.74, 0.83, 0.95}
+
+% To change background color or R code and/or output, use e.g.:
+\def\Rbackground{\color{babyblueeyes}}
+\def\Routbackground{\color[gray]{.9}}
+
+% To use rgb specifications use \color[rgb]{ , , }
+% To use gray scale use e.g. \color[gray]{0.5}
+% If you change any of these after the first chunk is produced, the
+% changes will have effect only for the next chunk.
+
+\title{Memory Demasking Analysis}
+\author{Abhilasha Kumar}
+
+\begin{document}
+\SweaveOpts{concordance=FALSE}
+
+ \maketitle
+
+\section{Reading the Data File}
+
+We first read the file into an object called \emph{mem}. We can also display some part of the data by calling the head() function.
+
+<<>>=
+mem = read.csv("Compiled_MemoryDemasking.csv", header = TRUE, 
+               sep = ",", stringsAsFactors = TRUE)
+head(mem)
+@
+
+\section {Raw RT as a function of Prime}
+
+\subsection {Raw RT Figure}
+
+First, we see whether the RT to recognize the target word varies as a function of the prime condition. Note that we only want to consider trials in which the target word was correctly identified by the participant. We first do this separately for Immediate and Delayed.
+
+\subsubsection {Immediate}
+<<fig=TRUE>>=
+library(dplyr)
+mem_correct_imm = mem %>% filter(TargetAccuracyImmediate == "1")
+RT_rmisc = Rmisc::summarySE(mem_correct_imm, 
+                            measurevar = "RTImmediate",
+                            groupvars = "PrimeCondition")
+
+library(ggplot2)
+library(ggthemes)
+library(dplyr)
+RT_rmisc %>% 
+  ggplot(aes(x = PrimeCondition, y = RTImmediate))+
+  geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+  geom_errorbar(aes(ymin = RTImmediate - se, ymax = RTImmediate + se),
+                width=.05, position=position_dodge(.5)) +
+  theme_few()+
+  scale_fill_solarized()+
+  xlab("Prime Condition") + ylab("Mean Accuracy") +
+  ggtitle("Raw RT to Recognise Target (Immediate)")  
+@
+
+\subsubsection {Delayed}
+<<fig=TRUE>>=
+mem_correct_del = mem %>% filter(TargetAccuracyDelayed == "1")
+RT_rmisc = Rmisc::summarySE(mem_correct_del, 
+                            measurevar = "RTDelayed",
+                            groupvars = "PrimeCondition")
+
+library(ggplot2)
+library(ggthemes)
+library(dplyr)
+RT_rmisc %>% 
+  ggplot(aes(x = PrimeCondition, y = RTDelayed))+
+  geom_bar(stat = "identity", position = "dodge", width = 0.5)+
+  geom_errorbar(aes(ymin = RTDelayed - se, ymax = RTDelayed + se),
+                width=.05, position=position_dodge(.5)) +
+  theme_few()+
+  scale_fill_solarized()+
+  xlab("Prime Condition") + ylab("Mean Accuracy") +
+  ggtitle("Raw RT to Recognise Target (Delayed)")  
+@
+
+\subsection {Raw RT ANOVA}
+
+\subsubsection {Immediate}
+
+<<>>=
+rt_prime_subject_imm = group_by(mem_correct_imm, Subject, PrimeCondition) %>%
+  summarise_at(vars(RTImmediate), mean)
+
+rt_prime_subject_imm$Subject = as.factor(rt_prime_subject_imm$Subject)
+
+rt_aov_imm = aov(data = rt_prime_subject_imm, RTImmediate ~ PrimeCondition +
+                   Error(Subject/PrimeCondition)) 
+summary(rt_aov_imm)
+@
+
+\subsubsection {Delayed}
+
+<<>>=
+rt_prime_subject_del = group_by(mem_correct_del, Subject, PrimeCondition) %>%
+  summarise_at(vars(RTDelayed), mean)
+
+rt_prime_subject_del$Subject = as.factor(rt_prime_subject_del$Subject)
+
+rt_aov_del = aov(data = rt_prime_subject_del, RTDelayed ~ PrimeCondition +
+                   Error(Subject/PrimeCondition)) 
+summary(rt_aov_del)
+@
+
+\section {z-scoring RTs}
+
+\subsection {Trimming Error Trials and Below 250, Above 7s}
+
+<<>>=
+memory_imm = mem_correct_imm %>% filter(RTImmediate >= 250 & RTImmediate <=7000)
+memory_del = mem_correct_del %>% filter(RTDelayed >=250 & RTDelayed <= 7000) 
+@
+
+\subsection {Making z-scores}
+
+\subsubsection{For immediate RTs}
+<<>>=
+ library(dplyr)
+ ## aggregate per subject all IVs and DVs
+ memory_mean = group_by(memory_imm, Subject) %>%
+   summarise_at(vars(RTImmediate), mean)
+ colnames(memory_mean) = c("Subject", "meanRTimm")
+ 
+ memory_sd = group_by(memory_imm, Subject) %>%
+   summarise_at(vars(RTImmediate), sd)
+ colnames(memory_sd) = c("Subject", "sdRTimm")
+ 
+ memory_agg = merge(memory_mean, memory_sd, by = "Subject")
+ 
+ ## merge aggregate info with long data
+ memory_imm = merge(memory_imm, memory_agg, by = "Subject", all.x = T)
+ 
+ ## person and grand-mean centered scores using original and aggregate
+ library(dplyr)
+ memory_imm = memory_imm %>% mutate(zRT_imm = 
+                                          (RTImmediate - meanRTimm)/sdRTimm)
+ 
+ ## checking: subject level means should be zero
+ 
+ sub_mem = group_by(memory_imm, Subject) %>%
+   summarise_at(vars(zRT_imm), mean)
+@
+
+\subsubsection{For delayed RTs}
+<<>>=
+ library(dplyr)
+ ## aggregate per subject all IVs and DVs
+ memory_mean = group_by(memory_del, Subject) %>%
+   summarise_at(vars(RTDelayed), mean)
+ colnames(memory_mean) = c("Subject", "meanRTdel")
+ 
+ memory_sd = group_by(memory_del, Subject) %>%
+   summarise_at(vars(RTDelayed), sd)
+ colnames(memory_sd) = c("Subject", "sdRTdel")
+ 
+ memory_agg = merge(memory_mean, memory_sd, by = "Subject")
+ 
+ ## merge aggregate info with long data
+ memory_del = merge(memory_del, memory_agg, by = "Subject", all.x = T)
+ 
+ ## person and grand-mean centered scores using original and aggregate
+ library(dplyr)
+ memory_del = memory_del %>% mutate(zRT_del = 
+                                          (RTDelayed - meanRTdel)/sdRTdel)
+ 
+ ## checking: subject level means should be zero
+ 
+ sub_mem = group_by(memory_del, Subject) %>%
+   summarise_at(vars(zRT_del), mean)
+@
+
+\subsection{ Trimming and repeat z-scoring}
+
+<<>>=
+memory_imm_trim = memory_imm %>% filter(zRT_imm >= -3 & zRT_imm <= 3)
+memory_del_trim = memory_del %>% filter(zRT_del >= -3 & zRT_del <= 3)
+@
+
+\subsubsection{For immediate RTs}
+<<>>=
+ library(dplyr)
+ ## aggregate per subject all IVs and DVs
+ memory_mean = group_by(memory_imm_trim, Subject) %>%
+   summarise_at(vars(RTImmediate), mean)
+ colnames(memory_mean) = c("Subject", "meanRTimm_final")
+ 
+ memory_sd = group_by(memory_imm_trim, Subject) %>%
+   summarise_at(vars(RTImmediate), sd)
+ colnames(memory_sd) = c("Subject", "sdRTimm_final")
+ 
+ memory_agg = merge(memory_mean, memory_sd, by = "Subject")
+ 
+ ## merge aggregate info with long data
+ memory_imm_trim = merge(memory_imm_trim, 
+                           memory_agg, by = "Subject", all.x = T)
+ 
+ ## person and grand-mean centered scores using original and aggregate
+ library(dplyr)
+ memory_imm_trim = memory_imm_trim %>% mutate(zRT_imm_final = 
+                          (RTImmediate - meanRTimm_final)/sdRTimm_final)
+ 
+ ## checking: subject level means should be zero
+ 
+ sub_mem = group_by(memory_imm_trim, Subject) %>%
+   summarise_at(vars(zRT_imm_final), mean)
+@
+
+\subsubsection {For delayed RTs}
+<<>>=
+ library(dplyr)
+ ## aggregate per subject all IVs and DVs
+ memory_mean = group_by(memory_del_trim, Subject) %>%
+   summarise_at(vars(RTDelayed), mean)
+ colnames(memory_mean) = c("Subject", "meanRTdel_final")
+ 
+ memory_sd = group_by(memory_del_trim, Subject) %>%
+   summarise_at(vars(RTDelayed), sd)
+ colnames(memory_sd) = c("Subject", "sdRTdel_final")
+ 
+ memory_agg = merge(memory_mean, memory_sd, by = "Subject")
+ 
+ ## merge aggregate info with long data
+ memory_del_trim = merge(memory_del_trim, 
+                           memory_agg, by = "Subject", all.x = T)
+ 
+ ## person and grand-mean centered scores using original and aggregate
+ library(dplyr)
+ memory_del_trim = memory_del_trim %>% mutate(zRT_del_final = 
+                             (RTDelayed - meanRTdel_final)/sdRTdel_final)
+ 
+ ## checking: subject level means should be zero
+ 
+ sub_mem = group_by(memory_del_trim, Subject) %>%
+   summarise_at(vars(zRT_del_final), mean)
+@
+
+\section{zRT ANOVAs: Immediate and Delayed}
+<<>>=
+ z_RT_imm = group_by(memory_imm_trim, Subject, PrimeCondition) %>%
+ summarise_at(vars(zRT_imm_final, RTImmediate), mean)
+
+ z_RT_del = group_by(memory_del_trim, Subject, PrimeCondition) %>%
+ summarise_at(vars(zRT_del_final, RTDelayed), mean)
+
+ z_RT_imm$PrimeCondition = as.factor(as.character(z_RT_imm$PrimeCondition))
+ z_RT_imm$Subject = as.factor(as.character(z_RT_imm$Subject))
+ 
+ z_RT_del$PrimeCondition = as.factor(as.character(z_RT_del$PrimeCondition))
+ z_RT_del$Subject = as.factor(as.character(z_RT_del$Subject))
+ 
+ z_RT_imm$zRT_imm_final = as.numeric(as.character(z_RT_imm$zRT_imm_final))
+ z_RT_imm$RTImmediate = as.numeric(as.character(z_RT_imm$RTImmediate))
+
+ z_RT_del$zRT_del_final = as.numeric(as.character(z_RT_del$zRT_del_final))
+ z_RT_del$RTDelayed = as.numeric(as.character(z_RT_del$RTDelayed))
+
+ 
+  ## IMMEDIATE
+ 
+ z_immediate_aov = aov(data = z_RT_imm, 
+                                      RTImmediate ~ PrimeCondition +
+                                  Error(Subject/PrimeCondition))
+ summary(z_immediate_aov)
+ 
+ options(contrasts = c('contr.sum', 'contr.poly'))
+ library(lsmeans)
+ library(multcomp)
+ imm_lsm = lsmeans::lsmeans(z_immediate_aov, c("PrimeCondition"))
+ prime_effect = cld(imm_lsm, alpha = 0.05, 
+                 adjust = "tukey", details = TRUE)
+ library(knitr)
+ kable(subset(prime_effect$comparisons,prime_effect$comparisons$p.value < 0.05 ))
+ 
+ ## DELAYED
+ 
+ z_delayed_aov = aov(data = z_RT_del, 
+                                      RTDelayed ~ PrimeCondition +
+                                  Error(Subject/PrimeCondition))
+ summary(z_delayed_aov)
+@
+
+
+\section {Figures for zRT}
+
+<<>>=
+ zRT_imm = Rmisc::summarySE(z_RT_imm, 
+                       measurevar = "zRT_imm_final",
+                       groupvars = c("PrimeCondition"))
+ zRT_del = Rmisc::summarySE(z_RT_del, 
+                       measurevar = "zRT_del_final",
+                       groupvars = c("PrimeCondition"))
+@
+ 
+\subsection {Immediate}
+<<fig=TRUE>>=
+ library(ggplot2)
+ library(ggthemes)
+ zRT_imm %>% 
+   ggplot(aes(x = PrimeCondition, y = zRT_imm_final))+
+   geom_bar(stat = "identity", position = "dodge", width = 0.5, 
+            fill = "darkgreen")+
+   geom_errorbar(aes(ymin = zRT_imm_final - ci, ymax = zRT_imm_final + ci),
+                 width=.05, position=position_dodge(.5)) +
+   theme_few()+
+   xlab("Prime Condition") + ylab("Mean z-RT") + 
+   ggtitle("Immediate: Mean z-RT by Prime Condition")
+@
+\subsection {Delayed}
+<<fig=TRUE>>=
+ zRT_del %>% 
+ ggplot(aes(x = PrimeCondition, y = zRT_del_final))+
+  geom_bar(stat = "identity", position = "dodge", width = 0.5, fill = "darkgreen")+
+   geom_errorbar(aes(ymin = zRT_del_final - ci, ymax = zRT_del_final + ci),
+                 width=.05, position=position_dodge(.5)) +
+   theme_few()+
+   xlab("Prime Condition") + ylab("Mean zRT") + 
+   ggtitle("Delayed: Mean zRT by Prime Condition")
+@
+
+\section {Conditional Analyses}
+
+\subsection {Merging Immediate and Delayed}
+
+<<>>=
+main_imm = memory_imm_trim[,c(1,5,6,9,13:16,22)] 
+main_del = memory_del_trim[,c(1,5,6,9,13:16, 22)]
+
+main_combined = merge(main_imm, main_del, 
+                      by =c("Subject", "Trial", "CorrectAnswer", "PrimeCondition",
+                            "TargetAccuracyImmediate",
+                            "RTImmediate", "TargetAccuracyDelayed","RTDelayed"))
+main_combined= main_combined %>% arrange(Subject, Trial)
+@
+
+\subsection {Effect of Immediate on Delayed}
+
+<<>>=
+library(lme4)
+
+m1 = lmer(data = main_combined, 
+          zRT_del_final ~ zRT_imm_final*PrimeCondition +
+            (1|Subject) + (1|CorrectAnswer))
+summary(m1)
+car::Anova(m1)
+@
+
+
+
+\end{document}
